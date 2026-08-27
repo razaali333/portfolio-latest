@@ -1803,9 +1803,12 @@ html[data-world-cursor="active"] .to-top {
 .career-intro__card > p { margin: 0; color: rgba(47, 48, 45, 0.55); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; }
 .career-intro__card h1 { margin: 14px 0; font-size: clamp(36px, 6vw, 62px); line-height: 0.98; letter-spacing: -0.04em; }
 .career-intro__card > span { display: block; max-width: 48ch; color: rgba(47, 48, 45, 0.68); line-height: 1.6; }
-.career-intro__card > div { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
-.career-intro__card button { min-height: 46px; padding: 12px 18px; border: 1px solid #2f302d; background: #2f302d; color: #fdfdfc; font: inherit; cursor: pointer; }
-.career-intro__card button + button { background: transparent; color: #2f302d; }
+.career-intro__card > div,
+.career-intro__buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+.career-intro__card button { min-height: 46px; padding: 12px 18px; border: 1px solid #2f302d; background: transparent; color: #2f302d; font: inherit; cursor: pointer; transition: all 180ms ease; }
+.career-intro__card button:hover { background: rgba(47, 48, 45, 0.06); }
+.career-intro__btn-primary { background: #2f302d !important; color: #fdfdfc !important; }
+.career-intro__btn-primary:hover { background: #1a1a18 !important; }
 
 .career-overview {
   position: fixed;
@@ -2297,6 +2300,77 @@ html[data-world-cursor="active"] .to-top {
   font-size: 11px;
 }
 
+.game-tour-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+  padding: 4px 10px;
+  border: 1px solid rgba(68, 68, 68, 0.22);
+  border-radius: 999px;
+  background: rgba(253, 253, 252, 0.85);
+  backdrop-filter: blur(8px);
+  color: inherit;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: all 180ms ease;
+}
+
+.game-tour-toggle i {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #666;
+  transition: all 180ms ease;
+}
+
+.game-tour-toggle:hover {
+  border-color: #2f302d;
+  background: rgba(253, 253, 252, 0.98);
+}
+
+.game-tour-toggle.is-active {
+  background: #2f302d;
+  color: #fdfdfc;
+  border-color: #2f302d;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+
+.game-tour-toggle.is-active i {
+  background: #4ade80;
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.35);
+  animation: tour-pulse 1.4s infinite ease-in-out;
+}
+
+@keyframes tour-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.7; }
+}
+
+.home-game.is-dark .game-tour-toggle,
+.home-game.is-thanks .game-tour-toggle {
+  border-color: rgba(232, 222, 188, 0.25);
+  background: rgba(24, 32, 28, 0.7);
+  color: #ece6d0;
+}
+
+.home-game.is-dark .game-tour-toggle i,
+.home-game.is-thanks .game-tour-toggle i {
+  background: #ece6d0;
+}
+
+.home-game.is-dark .game-tour-toggle.is-active,
+.home-game.is-thanks .game-tour-toggle.is-active {
+  background: #ece6d0;
+  color: #121814;
+  border-color: #ece6d0;
+}
+
 .game-pouch {
   grid-column: 1 / -1;
   display: flex;
@@ -2392,7 +2466,11 @@ html[data-world-cursor="active"] .to-top {
   z-index: 12;
   width: min(420px, 38vw);
   padding: 28px 30px 26px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.86));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.82));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(68, 68, 68, 0.12);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
   opacity: 0;
   transform: translate3d(18px, 18px, 0);
   pointer-events: none;
@@ -2585,7 +2663,11 @@ html[data-world-cursor="active"] .to-top {
   z-index: 12;
   width: min(280px, 46vw);
   padding: 18px 20px 16px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.86));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.82));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(68, 68, 68, 0.12);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
   opacity: 0;
   transform: translate3d(0, 12px, 0);
   pointer-events: none;

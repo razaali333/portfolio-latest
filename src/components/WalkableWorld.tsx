@@ -282,6 +282,36 @@ function buildWorld(): Dot[] {
   return dots;
 }
 
+type Flora = {
+  x: number;
+  height: number;
+  baseAngle: number;
+  currentAngle: number;
+  targetAngle: number;
+  rgb: readonly number[];
+  blades: number;
+  phase: number;
+};
+
+function buildFlora(): Flora[] {
+  const items: Flora[] = [];
+  for (let x = 60; x < WORLD_LENGTH - 1200; x += 22) {
+    const world = worldAt(x);
+    const rgb = world ? mix(world.rgb, INK, 0.35) : INK;
+    items.push({
+      x: x + rand(x * 3.1) * 10,
+      height: 9 + rand(x * 7.3) * 13,
+      baseAngle: (rand(x * 11.7) - 0.5) * 0.22,
+      currentAngle: 0,
+      targetAngle: 0,
+      rgb,
+      blades: rand(x * 13.9) > 0.45 ? 3 : 2,
+      phase: rand(x * 17.1) * Math.PI * 2,
+    });
+  }
+  return items;
+}
+
 function chalkFont(size: number, weight = 500) {
   return `${weight} ${size}px "Segoe Script", "Bradley Hand", "Apple Chancery", Palatino, Georgia, cursive`;
 }
@@ -530,12 +560,16 @@ export default function WalkableWorld({
   startAt = null,
   navigationNonce = 0,
   paused = false,
+  autoTour = false,
+  onAutoTourChange,
   onThanksChange,
 }: {
   soundOn?: boolean;
   startAt?: string | null;
   navigationNonce?: number;
   paused?: boolean;
+  autoTour?: boolean;
+  onAutoTourChange?: (active: boolean) => void;
   onThanksChange?: (active: boolean) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -547,6 +581,10 @@ export default function WalkableWorld({
   const jumpRef = useRef<string | null>(null);
   const [hint, setHint] = useState(true);
   const [ready, setReady] = useState(false);
+  const [tourActive, setTourActive] = useState(autoTour);
+  const tourRef = useRef(autoTour);
+  const tourPauseUntil = useRef(0);
+  const tourPausedChapters = useRef(new Set<string>());
   const [area, setArea] = useState<(typeof walkWorlds)[number] | null>(null);
   const [progress, setProgress] = useState(0);
   const [cursorRgb, setCursorRgb] = useState<readonly number[]>([88, 132, 104]);
@@ -569,10 +607,22 @@ export default function WalkableWorld({
   const marksRef = useRef<ChalkMark[]>([]);
   const hopRef = useRef(false);
   const lookRef = useRef(false);
+  const onAutoTourChangeRef = useRef(onAutoTourChange);
 
   soundRef.current = soundOn;
   pausedRef.current = paused;
   marksRef.current = marks;
+  tourRef.current = tourActive;
+  onAutoTourChangeRef.current = onAutoTourChange;
+
+  useEffect(() => {
+    setTourActive(autoTour);
+    tourRef.current = autoTour;
+    if (autoTour) {
+      tourPausedChapters.current.clear();
+      tourPauseUntil.current = 0;
+    }
+  }, [autoTour]);
 
   useEffect(() => {
     const saved = loadWalkProgress();
@@ -610,10 +660,14 @@ export default function WalkableWorld({
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const dots = buildWorld();
+    const flora = buildFlora();
     let width = 0;
     let height = 0;
     let frame = 0;
     let characterX = 520;
+    let walkerVx = 0;
+    let charTilt = 0;
+    let landingSquash = 1.0;
     let cameraX = 0;
     let walkFrame = 0;
     let lastStep = 0;
@@ -628,6 +682,7 @@ export default function WalkableWorld({
     let hopY = 0;
     let hopVy = 0;
     let hoppingNow = false;
+    let clickBeacon: { x: number; started: number } | null = null;
     let flash = 0;
     let paper: [number, number, number] = [253, 253, 252];
     const ripples: {
@@ -805,6 +860,28 @@ export default function WalkableWorld({
             : "47,48,45";
 
       if (!isThanks(theme)) {
+        // Far background mountain silhouette layer
+        ctx.save();
+        ctx.beginPath();
+        const bgOffset = camX * 0.16;
+        const bgBaseY = ground - 70;
+        ctx.moveTo(-40, height);
+        ctx.lineTo(-40, bgBaseY + Math.sin(bgOffset * 0.0012) * 28);
+        for (let bx = -40; bx <= width + 40; bx += 20) {
+          const wx = bgOffset + bx;
+          const hill = Math.sin(wx * 0.0014) * 36 + Math.sin(wx * 0.0035 + 2.1) * 16 + Math.cos(wx * 0.0008) * 22;
+          ctx.lineTo(bx, bgBaseY + hill);
+        }
+        ctx.lineTo(width + 40, height);
+        ctx.closePath();
+        const bgFill =
+          theme?.key === "ojicra"
+            ? "rgba(236,236,232,0.024)"
+            : `rgba(${theme?.rgb[0] || 88},${theme?.rgb[1] || 132},${theme?.rgb[2] || 104},0.038)`;
+        ctx.fillStyle = bgFill;
+        ctx.fill();
+        ctx.restore();
+
         for (let i = 0; i < careerYears.length; i += 1) {
           const year = careerYears[i];
           const sx = year.x - camX * 0.28;
@@ -823,6 +900,32 @@ export default function WalkableWorld({
         }
       }
 
+      // Soft terrain under-layer gradient
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(-20, height);
+      ctx.lineTo(-20, ground + terrain(camX - 20));
+      for (let gx = 0; gx <= width + 40; gx += 12) {
+        ctx.lineTo(gx, ground + terrain(camX + gx));
+      }
+      ctx.lineTo(width + 40, height);
+      ctx.closePath();
+      const groundGrad = ctx.createLinearGradient(0, ground - 20, 0, ground + 160);
+      const tRgb = theme?.rgb || [88, 132, 104];
+      if (theme?.key === "ojicra") {
+        groundGrad.addColorStop(0, "rgba(236,236,232,0.04)");
+        groundGrad.addColorStop(1, "rgba(236,236,232,0)");
+      } else if (theme?.key === "thanks") {
+        groundGrad.addColorStop(0, "rgba(232,222,188,0.05)");
+        groundGrad.addColorStop(1, "rgba(232,222,188,0)");
+      } else {
+        groundGrad.addColorStop(0, `rgba(${tRgb[0]},${tRgb[1]},${tRgb[2]},0.045)`);
+        groundGrad.addColorStop(1, `rgba(${tRgb[0]},${tRgb[1]},${tRgb[2]},0)`);
+      }
+      ctx.fillStyle = groundGrad;
+      ctx.fill();
+      ctx.restore();
+
       ctx.beginPath();
       ctx.strokeStyle =
         theme?.key === "ojicra"
@@ -837,6 +940,51 @@ export default function WalkableWorld({
         ctx.lineTo(gx, ground + terrain(camX + gx));
       }
       ctx.stroke();
+
+      // Reactive terrain flora / grass tufts
+      if (!isThanks(theme)) {
+        ctx.lineWidth = 1.15;
+        for (let i = 0; i < flora.length; i += 1) {
+          const f = flora[i];
+          const sx = f.x - camX;
+          if (sx < -30 || sx > width + 30) continue;
+          const gy = ground + terrain(f.x);
+          const wind = Math.sin(clock * 1.5 + f.phase) * 0.1;
+          const distWalker = f.x - walkerX;
+          if (Math.abs(distWalker) < 48) {
+            f.targetAngle = (distWalker > 0 ? 1 : -1) * (1 - Math.abs(distWalker) / 48) * 0.62;
+          }
+          if (interactive) {
+            const mdist = Math.hypot(sx - mx, gy - my);
+            if (mdist < 65) {
+              f.targetAngle += (sx > mx ? 1 : -1) * (1 - mdist / 65) * 0.55;
+            }
+          }
+          f.currentAngle += (f.targetAngle + f.baseAngle + wind - f.currentAngle) * 0.14;
+          f.targetAngle *= 0.88;
+
+          const bladeColor =
+            theme?.key === "ojicra"
+              ? "rgba(236,236,232,0.32)"
+              : `rgba(${f.rgb[0]},${f.rgb[1]},${f.rgb[2]},0.38)`;
+          ctx.strokeStyle = bladeColor;
+
+          for (let b = 0; b < f.blades; b += 1) {
+            const spread = (b - (f.blades - 1) / 2) * 0.18;
+            const bAngle = f.currentAngle + spread;
+            const h = f.height * (1 - Math.abs(spread) * 0.2);
+            const tipX = sx + Math.sin(bAngle) * h;
+            const tipY = gy - Math.cos(bAngle) * h;
+            const ctrlX = sx + Math.sin(bAngle * 0.5) * (h * 0.5);
+            const ctrlY = gy - h * 0.55;
+
+            ctx.beginPath();
+            ctx.moveTo(sx + (b - 1) * 1.5, gy);
+            ctx.quadraticCurveTo(ctrlX, ctrlY, tipX, tipY);
+            ctx.stroke();
+          }
+        }
+      }
 
       if (!isThanks(theme)) {
       for (let i = 0; i < walkWorlds.length; i += 1) {
@@ -928,16 +1076,40 @@ export default function WalkableWorld({
         const skill = careerSkills[i];
         const rise = Math.max(0, Math.min(1, (walkerX - skill.x + 160) / 340));
         if (rise <= 0) continue;
-        const sx = skill.x - camX * 0.62;
+        let sx = skill.x - camX * 0.62;
         if (sx < -160 || sx > width + 160) continue;
         const bob = Math.sin(clock * 1.4 + i * 0.7) * 10;
-        const sy = ground - 78 - rise * 86 - bob;
+        let sy = ground - 78 - rise * 86 - bob;
         const tone = theme?.rgb || [88, 132, 104];
         const held = bagRef.current.has(careerSkillId(skill));
+
+        let magnetTilt = 0;
+        if (!held) {
+          const charSx = walkerX - camX;
+          const charSy = ground + terrain(walkerX) - 30;
+          const dist = Math.hypot(sx - charSx, sy - charSy);
+          if (dist < 220 && dist > 1) {
+            const pull = (1 - dist / 220) ** 2 * 32;
+            sx += ((charSx - sx) / dist) * pull;
+            sy += ((charSy - sy) / dist) * pull;
+            magnetTilt = ((charSx - sx) / dist) * 0.18;
+
+            ctx.save();
+            ctx.strokeStyle = `rgba(${tone[0]},${tone[1]},${tone[2]},${((1 - dist / 220) * 0.22).toFixed(3)})`;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 4]);
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.quadraticCurveTo((sx + charSx) * 0.5, Math.min(sy, charSy) - 15, charSx, charSy);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+
         ctx.save();
         ctx.globalAlpha = rise * (held ? 0.28 : theme?.key === "ojicra" ? 0.78 : 0.64);
         ctx.translate(sx, sy);
-        ctx.rotate(Math.sin(clock * 0.6 + i) * (held ? 0 : 0.04));
+        ctx.rotate(Math.sin(clock * 0.6 + i) * (held ? 0 : 0.04) + magnetTilt);
         ctx.fillStyle = `rgba(${tone[0]},${tone[1]},${tone[2]},${held ? 0.08 : 0.16})`;
         const label = `${skill.year}  ${skill.skill}`;
         ctx.font = "500 13px JetBrains Mono, SF Mono, monospace";
@@ -1045,41 +1217,84 @@ export default function WalkableWorld({
       }
       const locked = lookingNow || !!dropActive;
 
-      const speed = hoppingNow ? 3.15 : 4.05;
-      if (!locked && keys.current.left) {
-        walkTarget.current = null;
-        characterX = Math.max(80, characterX - speed);
-        facing = -1;
-        lastMove = now;
-      }
-      if (!locked && keys.current.right) {
-        walkTarget.current = null;
-        characterX = Math.min(WORLD_LENGTH - 80, characterX + speed);
-        facing = 1;
-        lastMove = now;
-      }
-      if (!locked && walkTarget.current != null && !keys.current.left && !keys.current.right) {
-        const delta = walkTarget.current - characterX;
-        if (Math.abs(delta) < 12) {
+      const ACCEL = 0.55;
+      const MAX_SPEED = hoppingNow ? 3.3 : 4.2;
+      const FRICTION = 0.78;
+
+      let targetVx = 0;
+      if (!locked) {
+        if (keys.current.left) {
+          if (tourRef.current) {
+            tourRef.current = false;
+            setTourActive(false);
+            onAutoTourChangeRef.current?.(false);
+          }
           walkTarget.current = null;
-        } else if (delta > 0) {
-          characterX = Math.min(WORLD_LENGTH - 80, characterX + speed);
-          facing = 1;
+          targetVx = -MAX_SPEED;
           lastMove = now;
-        } else {
-          characterX = Math.max(80, characterX - speed);
-          facing = -1;
+        } else if (keys.current.right) {
+          if (tourRef.current) {
+            tourRef.current = false;
+            setTourActive(false);
+            onAutoTourChangeRef.current?.(false);
+          }
+          walkTarget.current = null;
+          targetVx = MAX_SPEED;
           lastMove = now;
+        } else if (walkTarget.current != null) {
+          const delta = walkTarget.current - characterX;
+          if (Math.abs(delta) < 10) {
+            walkTarget.current = null;
+            targetVx = 0;
+          } else {
+            const distRatio = Math.min(1, Math.abs(delta) / 50);
+            targetVx = Math.sign(delta) * MAX_SPEED * distRatio;
+            lastMove = now;
+          }
+        } else if (tourRef.current) {
+          const currentWorld = worldAt(characterX);
+          if (isThanks(currentWorld)) {
+            tourRef.current = false;
+            setTourActive(false);
+            onAutoTourChangeRef.current?.(false);
+          } else {
+            const atChapterStart = currentWorld && Math.abs(characterX - currentWorld.start) < 42;
+            if (atChapterStart && !tourPausedChapters.current.has(currentWorld.key)) {
+              tourPausedChapters.current.add(currentWorld.key);
+              tourPauseUntil.current = now + 3200;
+            }
+            if (now < tourPauseUntil.current) {
+              targetVx = 0;
+            } else {
+              targetVx = 3.2;
+              lastMove = now;
+            }
+          }
         }
       }
-      const moving =
-        !locked &&
-        (keys.current.left || keys.current.right || walkTarget.current != null);
+
+      if (targetVx !== 0) {
+        walkerVx += (targetVx - walkerVx) * 0.36;
+        if (Math.abs(walkerVx) > 0.2) {
+          facing = walkerVx > 0 ? 1 : -1;
+        }
+      } else {
+        walkerVx *= FRICTION;
+        if (Math.abs(walkerVx) < 0.04) walkerVx = 0;
+      }
+
+      characterX = Math.min(WORLD_LENGTH - 80, Math.max(80, characterX + walkerVx));
+      const moving = Math.abs(walkerVx) > 0.12;
+
+      const slope = (terrain(characterX + 12) - terrain(characterX - 12)) / 24;
+      const targetTilt = Math.atan(slope) * (facing === 1 ? 0.72 : -0.72);
+      charTilt += (targetTilt - charTilt) * 0.16;
 
       if (!dropActive) {
+        const lookahead = walkerVx * 22;
         cameraX +=
-          (characterX - width * 0.38 - (lookingNow ? 88 : 0) - cameraX) *
-          (cameraSnap > 0 ? 0.32 : hoppingNow ? 0.12 : 0.085);
+          (characterX - width * 0.38 + lookahead - (lookingNow ? 88 : 0) - cameraX) *
+          (cameraSnap > 0 ? 0.32 : hoppingNow ? 0.12 : 0.082);
       }
       if (cameraSnap > 0) cameraSnap -= 1;
       const current = dropActive?.toWorld || worldAt(characterX);
@@ -1151,19 +1366,22 @@ export default function WalkableWorld({
         }
       }
 
+      landingSquash += (1.0 - landingSquash) * 0.16;
+
       if (hoppingNow && !dropActive) {
-        hopVy += 0.36;
+        hopVy += 0.4;
         hopY += hopVy;
         if (hopY >= 0) {
           hopY = 0;
           hoppingNow = false;
+          landingSquash = 0.74;
           setHopping(false);
           burst(
             motes,
             characterX - cameraX,
             ground + terrain(characterX),
             current?.rgb || INK,
-            12,
+            14,
           );
           if (soundRef.current) playLand();
         }
@@ -1180,13 +1398,14 @@ export default function WalkableWorld({
         ];
       }
 
+      let strideBob = 0;
       if (dropActive) {
         setPose(WALK[2]);
       } else if (lookingNow) {
         setPose(SIT_CHILL);
       } else if (hoppingNow) {
         setPose(WALK[2]);
-      } else if (moving && now - lastStep > 88) {
+      } else if (moving && now - lastStep > 84) {
         walkFrame = (walkFrame + 1) % WALK.length;
         setPose(WALK[walkFrame]);
         lastStep = now;
@@ -1194,19 +1413,28 @@ export default function WalkableWorld({
           hintCleared = true;
           setHint(false);
         }
-        burst(
-          motes,
-          characterX - cameraX,
-          ground + terrain(characterX) + hopY,
-          current?.rgb || INK,
-          3,
-        );
+        for (let k = 0; k < 2; k += 1) {
+          motes.push({
+            x: characterX - cameraX - facing * 16 + (Math.random() - 0.5) * 6,
+            y: ground + terrain(characterX) + hopY + (Math.random() - 0.5) * 4,
+            vx: -facing * (0.6 + Math.random() * 1.4),
+            vy: -(0.3 + Math.random() * 0.7),
+            life: 0,
+            max: 300 + Math.random() * 160,
+            size: 1.2 + Math.random() * 1.6,
+            rgb: current?.rgb || INK,
+          });
+        }
       } else if (!moving && isThanks(current)) {
         setPose(SIT_CHILL);
       } else if (!moving && now - lastMove > 2800) {
         setPose(SIT);
       } else if (!moving) {
         setPose(IDLE);
+      }
+
+      if (moving && !hoppingNow && !dropActive) {
+        strideBob = Math.sin((walkFrame / WALK.length) * Math.PI * 2) * 1.8;
       }
 
       const mx = mouse.current.x;
@@ -1249,6 +1477,25 @@ export default function WalkableWorld({
       } else {
         ctx.fillStyle = `rgb(${paper[0].toFixed(0)},${paper[1].toFixed(0)},${paper[2].toFixed(0)})`;
         ctx.fillRect(0, 0, width, height);
+
+        // Ambient sky aura gradient matching current chapter
+        if (current && !isThanks(current)) {
+          const auraGrad = ctx.createRadialGradient(
+            width * 0.48,
+            ground - 140,
+            24,
+            width * 0.48,
+            ground - 140,
+            width * 0.72
+          );
+          const aTone = current.rgb;
+          const aAlpha = current.key === "ojicra" ? 0.08 : 0.055;
+          auraGrad.addColorStop(0, `rgba(${aTone[0]},${aTone[1]},${aTone[2]},${aAlpha})`);
+          auraGrad.addColorStop(1, `rgba(${aTone[0]},${aTone[1]},${aTone[2]},0)`);
+          ctx.fillStyle = auraGrad;
+          ctx.fillRect(0, 0, width, height);
+        }
+
         paintWorld(cameraX, current || null, characterX, ground, t, true);
 
         if (isThanks(current) && thanksAt) {
@@ -1287,6 +1534,32 @@ export default function WalkableWorld({
           ctx.font = "500 12px JetBrains Mono, SF Mono, monospace";
           ctx.fillText("sit · look", characterX - cameraX + 36, ground + terrain(characterX) - 78);
           ctx.globalAlpha = 1;
+        }
+
+        if (clickBeacon && !dropActive) {
+          const elapsed = now - clickBeacon.started;
+          if (elapsed < 1200) {
+            const bProgress = elapsed / 1200;
+            const bx = clickBeacon.x - cameraX;
+            const by = ground + terrain(clickBeacon.x);
+            const bAlpha = (1 - bProgress) * 0.75;
+            const bRadius = 4 + bProgress * 26;
+
+            ctx.save();
+            ctx.strokeStyle = `rgba(${current?.rgb[0] || 111},${current?.rgb[1] || 184},${current?.rgb[2] || 198},${bAlpha.toFixed(3)})`;
+            ctx.lineWidth = 1.6;
+            ctx.beginPath();
+            ctx.arc(bx, by, bRadius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(bx, by, Math.max(1.5, 4.5 * (1 - bProgress)), 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${current?.rgb[0] || 111},${current?.rgb[1] || 184},${current?.rgb[2] || 198},${(bAlpha * 0.85).toFixed(3)})`;
+            ctx.fill();
+            ctx.restore();
+          } else {
+            clickBeacon = null;
+          }
         }
       }
 
@@ -1417,11 +1690,36 @@ export default function WalkableWorld({
         ctx.fill();
       }
 
-      const squash = hopY < -20 ? 0.9 : hopY < -4 ? 1.04 : 1;
+      if (!dropActive) {
+        const shadowX = characterX - cameraX;
+        const shadowY = ground + terrain(characterX);
+        const altRatio = Math.max(0.1, 1 - Math.abs(hopY) / 130);
+        const shadowW = 40 * altRatio + 6;
+        const shadowH = 8 * altRatio + 2;
+        const isDark = current?.key === "ojicra" || current?.key === "thanks";
+        const shadowAlpha = (isDark ? 0.38 : 0.22) * altRatio;
+
+        ctx.save();
+        ctx.translate(shadowX, shadowY + 2);
+        ctx.rotate(Math.atan(slope));
+        ctx.scale(1, shadowH / shadowW);
+        const shadowGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, shadowW);
+        shadowGrad.addColorStop(0, `rgba(18, 22, 20, ${shadowAlpha.toFixed(3)})`);
+        shadowGrad.addColorStop(0.6, `rgba(18, 22, 20, ${(shadowAlpha * 0.45).toFixed(3)})`);
+        shadowGrad.addColorStop(1, "rgba(18, 22, 20, 0)");
+        ctx.fillStyle = shadowGrad;
+        ctx.beginPath();
+        ctx.arc(0, 0, shadowW, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      const squash = (hopY < -20 ? 0.9 : hopY < -4 ? 1.04 : 1) * landingSquash;
       let charLeft = characterX - cameraX;
       let charTop = ground + terrain(characterX) - 2;
       let charHop = hopY;
       let charSquash = squash;
+      const tiltDeg = dropActive ? 0 : (charTilt * 180) / Math.PI;
       if (dropActive) {
         const fromLeft = dropActive.fromX - dropActive.fromCam;
         const toLeft = dropActive.toX - dropActive.toCam;
@@ -1452,7 +1750,7 @@ export default function WalkableWorld({
       img.classList.toggle("is-hopping", hoppingNow);
       img.classList.toggle("is-looking", lookingNow);
       img.classList.toggle("is-dropping", !!dropActive);
-      img.style.transform = `translate(-50%, -86%) scaleX(${facing}) translateY(${charHop}px) scaleY(${charSquash})`;
+      img.style.transform = `translate(-50%, -86%) scaleX(${facing}) rotate(${tiltDeg.toFixed(2)}deg) translateY(${(charHop + strideBob).toFixed(2)}px) scaleY(${charSquash.toFixed(3)})`;
       img.style.left = `${charLeft}px`;
       img.style.top = `${charTop}px`;
 
@@ -1463,6 +1761,11 @@ export default function WalkableWorld({
       if (pausedRef.current) return;
       const tag = (event.target as HTMLElement | null)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "BUTTON" || tag === "A") return;
+      if (tourRef.current) {
+        tourRef.current = false;
+        setTourActive(false);
+        onAutoTourChangeRef.current?.(false);
+      }
       if (event.code === "Space" && !event.repeat) {
         hopRef.current = true;
         unlockAtlasSound();
@@ -1507,6 +1810,11 @@ export default function WalkableWorld({
     const onCanvas = (event: PointerEvent) => {
       if (pausedRef.current) return;
       if (event.button && event.button !== 0) return;
+      if (tourRef.current) {
+        tourRef.current = false;
+        setTourActive(false);
+        onAutoTourChangeRef.current?.(false);
+      }
       unlockAtlasSound();
       const rect = canvas.getBoundingClientRect();
       const sx = event.clientX - rect.left;
@@ -1540,7 +1848,10 @@ export default function WalkableWorld({
           return;
         }
       }
-      walkTarget.current = Math.max(80, Math.min(WORLD_LENGTH - 80, cam + sx));
+      const targetX = Math.max(80, Math.min(WORLD_LENGTH - 80, cam + sx));
+      walkTarget.current = targetX;
+      clickBeacon = { x: targetX, started: performance.now() };
+      burst(motes, sx, sy, [111, 184, 198], 6);
     };
     const onMove = (event: PointerEvent) => {
       mouse.current.x = event.clientX;
@@ -1629,7 +1940,27 @@ export default function WalkableWorld({
           <kbd>A</kbd>
           <kbd>D</kbd>
           <kbd>Space</kbd>
-          <span>{dropping ? "drop" : looking ? "look" : hopping ? "hop" : "walk / tap"}</span>
+          <span>{tourActive ? "guided tour" : dropping ? "drop" : looking ? "look" : hopping ? "hop" : "walk / tap"}</span>
+          <button
+            type="button"
+            className={`game-tour-toggle${tourActive ? " is-active" : ""}`}
+            onClick={() => {
+              const next = !tourActive;
+              setTourActive(next);
+              tourRef.current = next;
+              if (next) {
+                tourPausedChapters.current.clear();
+                tourPauseUntil.current = 0;
+                unlockAtlasSound();
+              }
+              onAutoTourChange?.(next);
+            }}
+            aria-pressed={tourActive}
+            title={tourActive ? "Pause auto tour" : "Start guided 60s tour"}
+          >
+            <i />
+            <span>{tourActive ? "Pause" : "Auto tour"}</span>
+          </button>
         </div>
         {collected.length ? (
           <p className="game-pouch" aria-label="Collected skills">

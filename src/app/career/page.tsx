@@ -20,6 +20,7 @@ function CareerWalk() {
   const [navigationNonce, setNavigationNonce] = useState(0);
   const [worldKey, setWorldKey] = useState(0);
   const [finishScene, setFinishScene] = useState(false);
+  const [autoTour, setAutoTour] = useState(false);
   const overviewTriggerRef = useRef<HTMLButtonElement>(null);
   const overviewPanelRef = useRef<HTMLDivElement>(null);
 
@@ -106,7 +107,16 @@ function CareerWalk() {
           </button>
         </div>
       </div>
-      <WalkableWorld key={worldKey} soundOn={soundOn} startAt={destination} navigationNonce={navigationNonce} paused={overviewOpen || introOpen} onThanksChange={setFinishScene} />
+      <WalkableWorld
+        key={worldKey}
+        soundOn={soundOn}
+        startAt={destination}
+        navigationNonce={navigationNonce}
+        paused={overviewOpen || introOpen}
+        autoTour={autoTour}
+        onAutoTourChange={setAutoTour}
+        onThanksChange={setFinishScene}
+      />
       <nav className={`career-recruiter-cta${finishScene ? " is-finish" : ""}`} aria-label="Career actions">
         <span><i /> Available for opportunities</span>
         <Link href="/work">Selected work</Link>
@@ -118,10 +128,39 @@ function CareerWalk() {
           <div className="career-intro__card">
             <p>Interactive career atlas · 2015—present</p>
             <h1 id="career-intro-title">How would you like to explore?</h1>
-            <span>Walk through six chapters, or get the complete story in about a minute.</span>
-            <div>
-              <button type="button" autoFocus onClick={() => { sessionStorage.setItem("career-intro-seen", "1"); setIntroOpen(false); }}>Walk my career</button>
-              <button type="button" onClick={() => { sessionStorage.setItem("career-intro-seen", "1"); setIntroOpen(false); setOverviewOpen(true); }}>View in 60 seconds</button>
+            <span>Walk through six chapters, take a guided 60-second tour, or get the quick timeline overview.</span>
+            <div className="career-intro__buttons">
+              <button
+                type="button"
+                className="career-intro__btn-primary"
+                onClick={() => {
+                  sessionStorage.setItem("career-intro-seen", "1");
+                  setIntroOpen(false);
+                  setAutoTour(true);
+                }}
+              >
+                Guided 60s tour
+              </button>
+              <button
+                type="button"
+                autoFocus
+                onClick={() => {
+                  sessionStorage.setItem("career-intro-seen", "1");
+                  setIntroOpen(false);
+                }}
+              >
+                Walk myself
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  sessionStorage.setItem("career-intro-seen", "1");
+                  setIntroOpen(false);
+                  setOverviewOpen(true);
+                }}
+              >
+                Timeline list
+              </button>
             </div>
           </div>
         </section>
