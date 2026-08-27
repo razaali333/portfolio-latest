@@ -7,7 +7,7 @@ import { site } from "@/lib/content";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "How this site handles contact messages, local journey state, and outbound links.",
+    "How this site handles contact messages, the assistant, local journey state, and outbound links.",
   alternates: { canonical: "/privacy" },
 };
 
@@ -25,16 +25,20 @@ const sections = [
     body: `The form collects company name, your name, email, topic, optional URL, timing, budget, and message. Submissions are sent to ${site.email} so I can evaluate the request and reply. If the site cannot deliver the message, your email app may open with the same details (mailto). First-time delivery through the site host may require a one-time confirmation email.`,
   },
   {
+    title: "Site assistant",
+    body: "The Ask button opens a Q&A assistant. Questions are matched against stored answers. Unanswered questions may be stored as short logs (the question text, whether it matched, and a confidence score) so the answers can be improved. If the assistant cannot answer, it asks for your name, email, and phone so I can follow up. That contact and the last few chat lines are stored as a lead. Do not send passwords or payment details in the assistant.",
+  },
+  {
     title: "Purpose of use",
-    body: "Submitted information is used only to evaluate your request, respond, and keep the correspondence needed to handle it.",
+    body: "Submitted information is used only to evaluate your request, respond, improve the assistant’s answers, and keep the correspondence needed to handle it.",
   },
   {
     title: "Third-party disclosure",
-    body: "Messages are delivered through the form relay used by this site (FormSubmit) so they can reach my inbox. Information is not sold. It may be processed by that relay and by my email provider. Other disclosure happens only where required by law or needed to protect rights and safety.",
+    body: "Contact-form messages are delivered through the form relay used by this site (FormSubmit) so they can reach my inbox. Assistant questions and fallback leads are stored in Prisma Postgres connected to this Vercel project. Information is not sold. Other disclosure happens only where required by law or needed to protect rights and safety.",
   },
   {
     title: "Cookies and analytics",
-    body: "This site does not load Google Analytics. No advertising cookies are set.",
+    body: "This site does not load Google Analytics. No advertising cookies are set. The assistant studio uses one httpOnly session cookie after you sign in at /studio/login.",
   },
   {
     title: "External services",

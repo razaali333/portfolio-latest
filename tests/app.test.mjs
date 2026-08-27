@@ -26,6 +26,21 @@ test("referenced social and portrait assets exist", async () => {
   ]);
 });
 
+test("chat faq seed covers portfolio services and common client questions", async () => {
+  const data = await read("src/lib/chat/faq-data.ts");
+  for (const needle of [
+    "Next.js",
+    "Laravel",
+    "pricing",
+    "maintenance",
+    "existing teams",
+    "Centurion",
+    "USD 100",
+  ]) {
+    assert.ok(data.includes(needle), `${needle} is missing from faq seed`);
+  }
+});
+
 test("career experience provides a valid main landmark", async () => {
   const career = await read("src/components/WalkableWorld.tsx");
   assert.match(career, /<main\s+id="main"/);

@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import FloatActions from "@/components/FloatActions";
+import ChatWidget from "@/components/ChatWidget";
 import WorldCursor from "@/components/WorldCursor";
 
 export default function ClientBody({
@@ -16,6 +17,7 @@ export default function ClientBody({
     <>
       {hideCursor ? null : <WorldCursor />}
       {children}
+      <ChatWidget />
       <FloatActions />
     </>
   );

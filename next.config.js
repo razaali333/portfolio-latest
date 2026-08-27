@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   allowedDevOrigins: ["*.preview.same-app.com"],
+  serverExternalPackages: ["@prisma/client", "@prisma/adapter-pg", "pg"],
   images: {
     remotePatterns: [
       {

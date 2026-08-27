@@ -20,6 +20,36 @@ Run the complete verification pipeline with `npm run check`.
 - `/career` — interactive career atlas
 - `/contact` — contact form
 - `/privacy` — data-handling policy
+- `/studio/login` — assistant training desk (private)
+
+## Site assistant
+
+The **Ask** control opens a Q&A widget on every page except `/career` and `/studio`. It matches questions against Prisma-stored pairs (services, stack, projects, pricing, timelines, working style). Unmatched questions ask for email and phone as a fallback lead.
+
+### Vercel + Prisma Postgres (free)
+
+1. In the Vercel project, **Storage → Create Database → Prisma Postgres**, region closest to the app (e.g. Washington, D.C. East), **Free** plan.
+2. **Connect** the database to the project. Vercel sets `DATABASE_URL` (`postgres://…` with pooling).
+3. Add environment variables:
+   - `CHAT_ADMIN_PASSWORD` — studio login
+   - `CHAT_ADMIN_SECRET` — cookie signing secret (long random string)
+4. Redeploy so `prisma migrate deploy` can run during `npm run build`.
+5. Sign in at `https://razaali.vercel.app/studio/login`, open **Training**, click **Seed defaults**.
+
+Locally: copy `.env.example` to `.env`, pull env with `vercel env pull` if the integration is connected, then `npx prisma migrate deploy` and `npm run db:seed`.
+
+Free-tier notes: FAQ rows are cached in memory for two minutes; each user message writes one compact `ConversationLog` row; leads store only contact fields plus the last few lines. Stay inside 100K operations / 500MB by not logging full transcripts.
+
+### API
+
+- `POST /api/chat` — match a message
+- `POST /api/chat/lead` — store a fallback lead
+- `GET|POST /api/studio/questions` and `PATCH|DELETE /api/studio/questions/:id`
+- `GET|PATCH /api/studio/leads`
+- `GET /api/studio/analytics`
+- `POST /api/studio/seed`
+
+## Contact delivery
 
 ## Contact delivery
 
