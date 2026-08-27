@@ -2968,11 +2968,8 @@ html[data-world-cursor="active"] .to-top {
 }
 
 .home-ad-card__visual {
-  position: relative;
   margin-bottom: 18px;
-  overflow: hidden;
-  background: #ecebe6;
-  box-shadow: 0 0 0 1px rgba(55, 55, 50, 0.08);
+  background: #f3f2ee;
 }
 
 .home-ad-card__visual img {
@@ -2980,8 +2977,21 @@ html[data-world-cursor="active"] .to-top {
   width: 100%;
   height: auto;
   object-fit: contain;
-  filter: none;
   mix-blend-mode: normal;
+  filter: grayscale(0.2) sepia(0.22) saturate(0.7) contrast(1.08) brightness(1.02) hue-rotate(12deg);
+}
+
+.home-ad-card__visual.paper-print::after {
+  opacity: 0.4;
+}
+
+.home-ad-card:hover .home-ad-card__visual img {
+  transform: scale(1.02);
+  filter: grayscale(0.06) sepia(0.1) saturate(0.88) contrast(1.04) brightness(1.01) hue-rotate(4deg);
+}
+
+.home-ad-card:hover .home-ad-card__visual.paper-print::after {
+  opacity: 0.18;
 }
 
 .home-ad-card__metric {

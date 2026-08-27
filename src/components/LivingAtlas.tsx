@@ -98,7 +98,7 @@ export default function LivingAtlas({ onReturn }: { onReturn?: () => void }) {
           <div className="home-ads-grid">
             {googleAds.campaigns.map((campaign) => (
               <article className="home-ad-card" key={campaign.name}>
-                <div className="home-ad-card__visual">
+                <div className="home-ad-card__visual paper-print">
                   <Image
                     src={campaign.image}
                     alt={`${campaign.name} Google Ads results`}
