@@ -51,7 +51,6 @@ Free-tier notes: FAQ rows are cached in memory for two minutes; each user messag
 
 ## Contact delivery
 
-## Contact delivery
 
 The server route validates submissions, enforces same-origin requests, throttles repeated attempts, and applies timing and honeypot checks before relaying valid messages through FormSubmit. If delivery fails, the browser opens a prefilled email draft.
 
