@@ -90,6 +90,15 @@ export function playLand() {
   ping(196, audio.currentTime, 0.12, 0.02);
 }
 
+export function playPickup() {
+  const audio = ctx();
+  if (!audio || !enabled) return;
+  if (audio.state === "suspended") void audio.resume();
+  const now = audio.currentTime;
+  ping(523, now, 0.12, 0.03);
+  ping(784, now + 0.05, 0.16, 0.022);
+}
+
 export function playComplete() {
   const audio = ctx();
   if (!audio || !enabled) return;

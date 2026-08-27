@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import WalkableWorld from "@/components/WalkableWorld";
 import {
   isAtlasSoundOn,
@@ -10,9 +11,17 @@ import {
 } from "@/lib/atlasSound";
 import { site, walkWorlds } from "@/lib/content";
 
-export default function CareerPage() {
+function CareerWalk() {
+  const params = useSearchParams();
   const [soundOn, setSoundOn] = useState(true);
   const [overviewOpen, setOverviewOpen] = useState(false);
+  const [introOpen, setIntroOpen] = useState(false);
+  const [destination, setDestination] = useState<string | null>(params.get("at"));
+  const [navigationNonce, setNavigationNonce] = useState(0);
+  const [worldKey, setWorldKey] = useState(0);
+  const [finishScene, setFinishScene] = useState(false);
+  const overviewTriggerRef = useRef<HTMLButtonElement>(null);
+  const overviewPanelRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     document.documentElement.dataset.act = "i";
@@ -23,9 +32,32 @@ export default function CareerPage() {
   }, []);
 
   useEffect(() => {
+    if (!params.get("at") && !sessionStorage.getItem("career-intro-seen")) setIntroOpen(true);
+  }, [params]);
+
+  useEffect(() => {
+    if (finishScene) document.documentElement.dataset.careerFinish = "true";
+    else delete document.documentElement.dataset.careerFinish;
+    return () => { delete document.documentElement.dataset.careerFinish; };
+  }, [finishScene]);
+
+  useEffect(() => {
     if (!overviewOpen) return;
+    const panel = overviewPanelRef.current;
+    panel?.querySelector<HTMLElement>("button, a")?.focus();
     const close = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOverviewOpen(false);
+      if (event.key === "Escape") {
+        setOverviewOpen(false);
+        overviewTriggerRef.current?.focus();
+      }
+      if (event.key === "Tab" && panel) {
+        const items = [...panel.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled])')];
+        if (!items.length) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }
     };
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
@@ -33,12 +65,13 @@ export default function CareerPage() {
 
   return (
     <>
-      <div className="home-entry-utilities">
+      <div className={`home-entry-utilities${finishScene ? " is-finish" : ""}`}>
         <Link className="home-language-switch" href="/">
           {site.person}
         </Link>
         <div className="home-entry-actions">
           <button
+            ref={overviewTriggerRef}
             className="career-overview-trigger"
             type="button"
             aria-expanded={overviewOpen}
@@ -73,11 +106,31 @@ export default function CareerPage() {
           </button>
         </div>
       </div>
-      <WalkableWorld soundOn={soundOn} />
+      <WalkableWorld key={worldKey} soundOn={soundOn} startAt={destination} navigationNonce={navigationNonce} paused={overviewOpen || introOpen} onThanksChange={setFinishScene} />
+      <nav className={`career-recruiter-cta${finishScene ? " is-finish" : ""}`} aria-label="Career actions">
+        <span><i /> Available for opportunities</span>
+        <Link href="/work">Selected work</Link>
+        <a href={site.resume} target="_blank" rel="noreferrer">Résumé</a>
+        <a href={`mailto:${site.email}`}>Contact</a>
+      </nav>
+      {introOpen ? (
+        <section className="career-intro" role="dialog" aria-modal="true" aria-labelledby="career-intro-title">
+          <div className="career-intro__card">
+            <p>Interactive career atlas · 2015—present</p>
+            <h1 id="career-intro-title">How would you like to explore?</h1>
+            <span>Walk through six chapters, or get the complete story in about a minute.</span>
+            <div>
+              <button type="button" autoFocus onClick={() => { sessionStorage.setItem("career-intro-seen", "1"); setIntroOpen(false); }}>Walk my career</button>
+              <button type="button" onClick={() => { sessionStorage.setItem("career-intro-seen", "1"); setIntroOpen(false); setOverviewOpen(true); }}>View in 60 seconds</button>
+            </div>
+          </div>
+        </section>
+      ) : null}
       <aside
         id="career-overview"
         className={`career-overview${overviewOpen ? " is-open" : ""}`}
         aria-hidden={!overviewOpen}
+        inert={!overviewOpen ? true : undefined}
         aria-label="Career overview"
       >
         <button
@@ -87,7 +140,7 @@ export default function CareerPage() {
           tabIndex={overviewOpen ? 0 : -1}
           onClick={() => setOverviewOpen(false)}
         />
-        <div className="career-overview__panel" role="dialog" aria-modal="true" aria-labelledby="career-overview-title">
+        <div ref={overviewPanelRef} className="career-overview__panel" role="dialog" aria-modal="true" aria-labelledby="career-overview-title">
           <header className="career-overview__header">
             <div>
               <p className="career-overview__eyebrow">Career journey · 2015—present</p>
@@ -107,6 +160,13 @@ export default function CareerPage() {
                   <h2>{world.name}</h2>
                   <p className="career-timeline__label">{world.label}</p>
                   <p>{world.description}</p>
+                  <p className="career-timeline__achievement">{world.achievement}</p>
+                  <button type="button" onClick={() => {
+                    setDestination(world.slug);
+                    setNavigationNonce((value) => value + 1);
+                    setOverviewOpen(false);
+                    overviewTriggerRef.current?.focus();
+                  }}>Jump to this chapter</button>
                   <a href={world.href} target={world.href.startsWith("http") ? "_blank" : undefined} rel="noreferrer">
                     {world.href.startsWith("http") ? `Visit ${world.name}` : `Read more about ${world.name}`}
                   </a>
@@ -118,9 +178,23 @@ export default function CareerPage() {
             <a href={site.resume} target="_blank" rel="noreferrer">Download resume</a>
             <a href={`mailto:${site.email}`}>Email me</a>
             <Link href="/work">View projects</Link>
+            <button type="button" onClick={() => {
+              localStorage.removeItem("career-walk-progress");
+              setDestination(null);
+              setWorldKey((value) => value + 1);
+              setOverviewOpen(false);
+            }}>Start again</button>
           </footer>
         </div>
       </aside>
     </>
+  );
+}
+
+export default function CareerPage() {
+  return (
+    <Suspense fallback={null}>
+      <CareerWalk />
+    </Suspense>
   );
 }

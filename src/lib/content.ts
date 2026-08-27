@@ -259,83 +259,168 @@ export const media = [
 export const walkWorlds = [
   {
     key: "moss",
+    slug: "about",
     name: "About",
     verb: "build",
     label: "full-stack / React / MongoDB",
     role: "I make ideas & things alive",
     description:
       "Software engineer and problem solver. Web development with PHP since 2015; now React, Laravel, and immersive apps at Centurion PLC.",
+    achievement: "A decade-long progression from PHP foundations to end-to-end product engineering.",
+    stack: ["React", "Next.js", "Laravel", "Node.js"],
     rgb: [122, 167, 142],
     start: 1680,
     end: 3180,
     href: "/about",
+    ask: {
+      prompt: "Reveal what I ship",
+      options: [
+        { label: "Web products — React to Laravel", ok: true },
+        { label: "Native iOS and Android apps", ok: false },
+      ],
+      reveal: "Web products. React, Next.js, Laravel, PHP. No native apps.",
+    },
   },
   {
     key: "taupe",
+    slug: "aursoft",
     name: "Aursoft",
     verb: "ship",
     label: "Full Stack Web Developer @ PHP",
     role: "Aug 2018 — May 2021",
     description:
       "React, Tailwind, Laravel, CodeIgniter, Ext-Sencha, PostgreSQL/MySQL. Testing, design, and a large user base.",
+    achievement: "Delivered and maintained full-stack software for a large production user base.",
+    stack: ["React", "Laravel", "PostgreSQL", "Tailwind"],
     rgb: [111, 184, 198],
     start: 3380,
     end: 4880,
     href: "https://www.aursoft.com/",
+    ask: {
+      prompt: "Reveal the delivery stack",
+      options: [
+        { label: "Aug 2018 — May 2021", ok: true },
+        { label: "Mar 2023 — May 2026", ok: false },
+      ],
+      reveal: "Full-stack at Aursoft in Islamabad, 2018–2021.",
+    },
   },
   {
     key: "islog",
+    slug: "ferisoft",
     name: "Ferisoft",
     verb: "connect",
     label: "Back End Web Developer",
     role: "Jun 2021 — Aug 2022",
     description:
       "Laravel, Node.js, Express, Firebase, and APIs. Backend, testing, and interactivity.",
+    achievement: "Built API-driven backend features connecting Laravel, Node.js, and Firebase services.",
+    stack: ["Laravel", "Node.js", "Express", "Firebase"],
     rgb: [216, 185, 76],
     start: 5080,
     end: 6480,
     href: "https://www.ferisoft.com/",
+    ask: {
+      prompt: "Reveal the engineering focus",
+      options: [
+        { label: "Backend and APIs", ok: true },
+        { label: "Brand-only landing pages", ok: false },
+      ],
+      reveal: "Laravel, Node, Express, Firebase — remote Türkiye.",
+    },
   },
   {
     key: "ojicra",
+    slug: "fujtown",
     name: "Fujtown",
     verb: "launch",
     label: "Full Stack Web Developer @ PHP",
     role: "Mar 2023 — May 2026",
     description:
       "React, Next.js, Tailwind, Laravel, CodeIgniter, PostgreSQL/MySQL. Design, development, and product work in Fujairah.",
+    achievement: "Shipped a searchable business directory with listings, authentication, and role-based workflows.",
+    stack: ["Next.js", "Vue.js", "Laravel", "MySQL"],
     rgb: [105, 107, 116],
     start: 6680,
     end: 8180,
     href: "https://www.fujtown.com/",
+    ask: {
+      prompt: "Reveal the product architecture",
+      options: [
+        { label: "A business directory", ok: true },
+        { label: "A hotel booking engine", ok: false },
+      ],
+      reveal: "Laravel + Vue directory: listings, search, auth, roles.",
+    },
   },
   {
     key: "monoomoi",
+    slug: "centurion",
     name: "Centurion PLC",
     verb: "build",
     label: "Full Stack Web Developer",
     role: "Jul 2026 — Present",
     description:
       "Current role since July 2026. Full-stack delivery on production web platforms after Fujtown.",
+    achievement: "Currently delivering full-stack features for production platforms in the Maldives.",
+    stack: ["React", "Laravel", "TypeScript", "Performance"],
     rgb: [197, 111, 94],
     start: 8380,
     end: 9480,
     href: "https://centurion.mv/",
+    ask: {
+      prompt: "Reveal my current chapter",
+      options: [
+        { label: "Centurion PLC, Maldives", ok: true },
+        { label: "Still at Fujtown", ok: false },
+      ],
+      reveal: "Full-stack at Centurion PLC since July 2026.",
+    },
   },
   {
     key: "monoerabi",
+    slug: "contact",
     name: "Contact",
     verb: "write",
     label: "inbox open",
     role: "Get in touch",
     description:
       "Always open for new opportunities. Whether you have a question or just want to say hi, I'll try my best to get back to you.",
+    achievement: "The next chapter starts with a conversation.",
+    stack: ["Remote", "Full stack", "Product", "Collaboration"],
     rgb: [139, 119, 170],
     start: 9580,
     end: 10780,
     href: "/contact",
+    ask: {
+      prompt: "Reveal the fastest way to connect",
+      options: [
+        { label: "Contact form or email", ok: true },
+        { label: "Recruiter portal only", ok: false },
+      ],
+      reveal: "Contact page, email, or WhatsApp — inbox is open.",
+    },
   },
 ] as const;
+
+const CAREER_AT_ALIASES: Record<string, string> = {
+  about: "moss",
+  aursoft: "taupe",
+  ferisoft: "islog",
+  fujtown: "ojicra",
+  centurion: "monoomoi",
+  contact: "monoerabi",
+  thanks: "thanks",
+  finish: "thanks",
+};
+
+export function resolveCareerAt(at: string | null | undefined) {
+  if (!at) return null;
+  const key = at.trim().toLowerCase();
+  if (CAREER_AT_ALIASES[key]) return CAREER_AT_ALIASES[key];
+  const world = walkWorlds.find((item) => item.key === key || item.slug === key);
+  return world?.key ?? null;
+}
 
 export const careerSkills = [
   { year: "2015", skill: "PHP", x: 1760 },
@@ -362,6 +447,10 @@ export const careerSkills = [
   { year: "2026", skill: "Centurion PLC", x: 8520 },
   { year: "2026", skill: "SEO / Performance", x: 8920 },
 ] as const;
+
+export function careerSkillId(skill: (typeof careerSkills)[number]) {
+  return `${skill.year}-${skill.skill}`;
+}
 
 export const careerYears = [
   { year: "2015", label: "Started with PHP", x: 2100 },
