@@ -590,6 +590,13 @@ export default function WalkableWorld({
         jumpRef.current = null;
       }
 
+      const compact = width < 900;
+      const reserved = compact ? Math.min(height * 0.36, 248) : 0;
+      const ground = compact
+        ? Math.min(height * 0.5, height - reserved - 8)
+        : height * 0.68;
+      const stageH = Math.max(280, height - reserved);
+
       if (dropActive) {
         const raw = (now - dropActive.started) / DROP_MS;
         if (raw >= 1) {
@@ -603,7 +610,7 @@ export default function WalkableWorld({
           burst(
             motes,
             width * 0.38,
-            height * 0.68 + terrain(characterX),
+            ground + terrain(characterX),
             dropActive.toWorld.rgb,
             16,
           );
@@ -659,7 +666,6 @@ export default function WalkableWorld({
           (cameraSnap > 0 ? 0.32 : hoppingNow ? 0.12 : 0.085);
       }
       if (cameraSnap > 0) cameraSnap -= 1;
-      const ground = height * 0.68;
       const current = dropActive?.toWorld || worldAt(characterX);
       const nextProgress = Math.min(1, characterX / END_X);
       if (Math.abs(nextProgress - lastProgress) > 0.008) {
@@ -808,7 +814,7 @@ export default function WalkableWorld({
             ctx.globalAlpha = Math.max(0.15, 1 - dist / 520) * pulse;
             ctx.fillStyle = `rgb(${ink})`;
             ctx.font = "500 12px JetBrains Mono, SF Mono, monospace";
-            ctx.fillText(`→  ${upcoming.name}`, width * 0.62, ground - 210);
+            ctx.fillText(`→  ${upcoming.name}`, width * 0.62, ground - (compact ? 120 : 210));
             ctx.globalAlpha = 1;
           }
         }
@@ -961,7 +967,7 @@ export default function WalkableWorld({
         if (dropT < split) {
           const leave = dropT / split;
           const anticipation = leave < 0.2 ? Math.sin((leave / 0.2) * Math.PI) * 28 : 0;
-          const fall = leave <= 0.2 ? 0 : ((leave - 0.2) / 0.8) ** 2 * height * 1.08;
+          const fall = leave <= 0.2 ? 0 : ((leave - 0.2) / 0.8) ** 2 * stageH * 1.08;
           charLeft = fromLeft;
           charTop = fromTop - anticipation + fall;
           charHop = 0;
@@ -1051,7 +1057,7 @@ export default function WalkableWorld({
     <main
       id="main"
       tabIndex={-1}
-      className={`home-game${ready ? " is-ready" : ""}${dark ? " is-dark" : ""}`}
+      className={`home-game${ready ? " is-ready" : ""}${dark ? " is-dark" : ""}${dropping ? " is-world-drop" : ""}`}
       aria-label="Walk through the world"
       data-world-cursor="active"
     >
@@ -1122,8 +1128,8 @@ export default function WalkableWorld({
             {area.verb} · {dropping ? "drop · new world" : looking ? "sit · look" : hopping ? "career move" : "discovery"}
           </p>
           <p className="game-card__title">{area.name}</p>
-          <p>{area.role}</p>
-          <p>{area.description}</p>
+          <p className="game-card__role">{area.role}</p>
+          <p className="game-card__copy">{area.description}</p>
           <a href={area.href} target={area.href.startsWith("http") ? "_blank" : undefined} rel="noreferrer">
             {area.href.startsWith("http") ? `Visit ${area.name}` : `Explore ${area.name}`}
           </a>
