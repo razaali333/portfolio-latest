@@ -371,7 +371,7 @@ export const careerYears = [
   { year: "2026", label: "Centurion PLC", x: 8700 },
 ] as const;
 
-export const WORLD_LENGTH = 11200;
+export const WORLD_LENGTH = 12600;
 
 export const stack = [
   "Next.js",

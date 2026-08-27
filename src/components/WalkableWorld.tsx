@@ -5,10 +5,19 @@ import WorldCursor from "@/components/WorldCursor";
 import {
   careerSkills,
   careerYears,
+  site,
   walkWorlds,
   WORLD_LENGTH,
 } from "@/lib/content";
-import { playComplete, playDiscovery, playDrop, playLand, unlockAtlasSound } from "@/lib/atlasSound";
+import {
+  playComplete,
+  playDiscovery,
+  playDrop,
+  playLand,
+  startChalkWrite,
+  stopChalkWrite,
+  unlockAtlasSound,
+} from "@/lib/atlasSound";
 import { downloadCareerConstellation } from "@/lib/constellation";
 
 const WALK = [
@@ -26,8 +35,23 @@ const END_X = WORLD_LENGTH - 280;
 const LOOK_MS = 2400;
 const DROP_MS = 1560;
 const INK: readonly number[] = [68, 68, 66];
+const CHALK: readonly number[] = [232, 222, 188];
+const BOARD: [number, number, number] = [24, 32, 28];
+const THANKS_SCENE = {
+  key: "thanks",
+  name: "Thanks",
+  verb: "rest",
+  label: "walk complete",
+  role: "Visitor",
+  description: "Thank you for walking this far.",
+  rgb: CHALK,
+  start: walkWorlds[walkWorlds.length - 1].end,
+  end: WORLD_LENGTH,
+  href: "/contact",
+} as const;
 
 type World = (typeof walkWorlds)[number];
+type Scene = World | typeof THANKS_SCENE;
 
 type Dot = {
   homeX: number;
@@ -46,8 +70,17 @@ function rand(n: number) {
   return x - Math.floor(x);
 }
 
-function worldAt(x: number) {
+function worldAt(x: number): Scene | undefined {
+  if (x >= THANKS_SCENE.start) return THANKS_SCENE;
   return walkWorlds.find((w) => x >= w.start && x < w.end);
+}
+
+function isThanks(scene: Scene | null | undefined): scene is typeof THANKS_SCENE {
+  return scene?.key === "thanks";
+}
+
+function isDarkScene(scene: Scene | null | undefined) {
+  return scene?.key === "ojicra" || scene?.key === "thanks";
 }
 
 function terrain(x: number) {
@@ -58,7 +91,8 @@ function easeInOutCubic(x: number) {
   return x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2;
 }
 
-function paperOf(world: World | null | undefined): [number, number, number] {
+function paperOf(world: Scene | null | undefined): [number, number, number] {
+  if (world?.key === "thanks") return BOARD;
   if (world?.key === "ojicra") return [16, 17, 20];
   if (world) return mix([253, 253, 252], world.rgb, 0.08);
   return [253, 253, 252];
@@ -214,7 +248,196 @@ function buildWorld(): Dot[] {
   }
   addCluster(dots, 10180, -80, 140, 70, 70, monoerabi.rgb, 2200, 0.72);
 
+  for (let i = 0; i < 90; i += 1) {
+    addDot(
+      dots,
+      THANKS_SCENE.start + 60 + rand(i + 9) * 980,
+      -30 - rand(i + 21) * 220,
+      mix(CHALK, [255, 255, 255], rand(i + 4) * 0.35),
+      0.7 + rand(i + 13) * 1.4,
+      0.55 + rand(i + 17) * 0.35,
+      i % 5 === 0 ? "dash" : "dot",
+      rand(i + 29) * Math.PI * 2,
+    );
+  }
+
   return dots;
+}
+
+function chalkFont(size: number, weight = 500) {
+  return `${weight} ${size}px "Segoe Script", "Bradley Hand", "Apple Chancery", Palatino, Georgia, cursive`;
+}
+
+function drawChalkGlyph(
+  ctx: CanvasRenderingContext2D,
+  glyph: string,
+  x: number,
+  y: number,
+  seed: number,
+  size: number,
+) {
+  for (let pass = 0; pass < 8; pass += 1) {
+    ctx.globalAlpha = 0.14 + rand(seed + pass) * 0.2;
+    ctx.fillStyle = `rgb(${CHALK[0]},${CHALK[1]},${CHALK[2]})`;
+    ctx.fillText(
+      glyph,
+      x + (rand(seed + pass + 11) - 0.5) * 1.9,
+      y + (rand(seed + pass + 19) - 0.5) * 1.5,
+    );
+  }
+  const glyphWidth = ctx.measureText(glyph).width;
+  for (let speck = 0; speck < 16; speck += 1) {
+    ctx.globalAlpha = 0.1 + rand(seed + speck + 40) * 0.28;
+    ctx.fillRect(
+      x + rand(seed + speck) * glyphWidth,
+      y - 6 - rand(seed + speck + 8) * size * 0.72,
+      1.15 + rand(seed + speck + 21),
+      1.05,
+    );
+  }
+  ctx.globalAlpha = 1;
+}
+
+function writeChalkLine(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  font: string,
+  size: number,
+  progress: number,
+  seed: number,
+) {
+  ctx.font = font;
+  ctx.textBaseline = "alphabetic";
+  const glyphs = Array.from(text);
+  const shown = progress * glyphs.length;
+  let cursor = x;
+  let tipX = x;
+  let tipY = y;
+  glyphs.forEach((glyph, index) => {
+    const glyphWidth = Math.max(ctx.measureText(glyph).width, 4);
+    const local = Math.max(0, Math.min(1, shown - index));
+    if (local > 0) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(cursor - 2, y - size * 1.15, glyphWidth * local + 3, size * 1.45);
+      ctx.clip();
+      ctx.translate(0, Math.sin(seed + index) * 0.8);
+      drawChalkGlyph(ctx, glyph, cursor, y, seed * 17 + index * 13, size);
+      ctx.restore();
+      tipX = cursor + glyphWidth * local;
+      tipY = y - size * 0.35;
+    }
+    cursor += glyphWidth;
+  });
+  return { tipX, tipY };
+}
+
+function paintBlackboard(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  ground: number,
+  clock: number,
+  write: number,
+) {
+  const wood = [118, 78, 44];
+  const rail = 20;
+  for (let i = 0; i < 240; i += 1) {
+    ctx.fillStyle = `rgba(232, 222, 188,${(0.03 + rand(i + 3) * 0.05).toFixed(3)})`;
+    ctx.fillRect(
+      rail + rand(i + 8) * (width - rail * 2),
+      rail + rand(i + 14) * (height - 80),
+      1 + rand(i + 21) * 1.6,
+      1,
+    );
+  }
+
+  ctx.fillStyle = `rgb(${wood[0]},${wood[1]},${wood[2]})`;
+  ctx.fillRect(0, 0, width, rail);
+  ctx.fillRect(0, 0, rail, height);
+  ctx.fillRect(width - rail, 0, rail, height);
+  ctx.fillStyle = "rgba(10, 14, 12, 0.62)";
+  ctx.fillRect(rail, height - 60, width - rail * 2, 40);
+  ctx.fillStyle = `rgb(${wood[0] - 14},${wood[1] - 10},${wood[2] - 8})`;
+  ctx.fillRect(0, height - 24, width, 24);
+  ctx.fillStyle = "#efe4c4";
+  ctx.fillRect(rail + 22, height - 52, 92, 9);
+  ctx.fillStyle = "#d7c48a";
+  ctx.fillRect(rail + 22, height - 52, 10, 9);
+  ctx.fillStyle = "#f3ead0";
+  ctx.fillRect(rail + 128, height - 50, 38, 7);
+
+  ctx.save();
+  ctx.globalAlpha = 0.08;
+  ctx.strokeStyle = `rgb(${CHALK[0]},${CHALK[1]},${CHALK[2]})`;
+  ctx.lineWidth = 1.4;
+  ctx.setLineDash([3, 7]);
+  for (let i = 0; i < 4; i += 1) {
+    ctx.beginPath();
+    const y0 = 86 + i * 52 + Math.sin(clock * 0.4 + i) * 3;
+    ctx.moveTo(width * 0.44, y0);
+    ctx.bezierCurveTo(width * 0.6, y0 + 16, width * 0.74, y0 - 10, width * 0.9, y0 + 6);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  const originX = Math.min(width * 0.5, width - 380);
+  const lines = [
+    { text: "Thank you", size: 58, weight: 600, y: ground - 176, delay: 0.04, span: 0.42 },
+    { text: "for walking with me.", size: 26, weight: 500, y: ground - 118, delay: 0.46, span: 0.32 },
+    { text: `— ${site.person}`, size: 18, weight: 500, y: ground - 74, delay: 0.78, span: 0.2 },
+  ];
+  let tip = { x: originX, y: ground - 176, writing: false };
+  lines.forEach((line, index) => {
+    const local = Math.max(0, Math.min(1, (write - line.delay) / line.span));
+    if (local <= 0) return;
+    const drawn = writeChalkLine(
+      ctx,
+      line.text,
+      originX,
+      line.y,
+      chalkFont(line.size, line.weight),
+      line.size,
+      local,
+      41 + index * 9,
+    );
+    if (local < 1) tip = { x: drawn.tipX, y: drawn.tipY, writing: true };
+  });
+
+  if (tip.writing) {
+    ctx.save();
+    ctx.translate(tip.x + 8, tip.y);
+    ctx.rotate(-0.72 + Math.sin(clock * 18) * 0.04);
+    ctx.fillStyle = "#f4ead0";
+    ctx.fillRect(0, 0, 34, 8);
+    ctx.fillStyle = "#c9b57a";
+    ctx.fillRect(26, 0, 8, 8);
+    ctx.fillStyle = "rgba(232, 222, 188, 0.55)";
+    ctx.fillRect(-4, 2, 6, 4);
+    ctx.restore();
+    for (let dust = 0; dust < 10; dust += 1) {
+      ctx.globalAlpha = 0.18 + (dust % 3) * 0.08;
+      ctx.fillStyle = `rgb(${CHALK[0]},${CHALK[1]},${CHALK[2]})`;
+      ctx.fillRect(
+        tip.x + Math.sin(clock * 9 + dust) * 10,
+        tip.y + 6 + ((clock * 40 + dust * 13) % 28),
+        1.3,
+        1.3,
+      );
+    }
+    ctx.globalAlpha = 1;
+  } else if (write >= 1) {
+    ctx.save();
+    ctx.strokeStyle = `rgba(${CHALK[0]},${CHALK[1]},${CHALK[2]},0.55)`;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(originX, ground - 58);
+    ctx.bezierCurveTo(originX + 40, ground - 50, originX + 90, ground - 62, originX + 128, ground - 54);
+    ctx.stroke();
+    ctx.restore();
+  }
 }
 
 function burst(
@@ -271,6 +494,7 @@ export default function WalkableWorld({
   const [dropping, setDropping] = useState(false);
   const [found, setFound] = useState<string[]>([]);
   const [complete, setComplete] = useState(false);
+  const [thanks, setThanks] = useState(false);
 
   soundRef.current = soundOn;
 
@@ -337,13 +561,15 @@ export default function WalkableWorld({
     let lookUntil = 0;
     let cameraSnap = 0;
     let celebrated = false;
+    let thanksAt = 0;
+    let chalkAudio = false;
     let dropActive: {
       fromCam: number;
       toCam: number;
       fromX: number;
       toX: number;
-      fromWorld: World | null;
-      toWorld: World;
+      fromWorld: Scene | null;
+      toWorld: Scene;
       started: number;
     } | null = null;
     let dropHudSwitched = false;
@@ -365,6 +591,14 @@ export default function WalkableWorld({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
 
+    const applySceneHud = (scene: Scene | null) => {
+      const board = isThanks(scene);
+      setArea(board ? null : (scene as World | null));
+      setCursorRgb(scene?.rgb || [88, 132, 104]);
+      setDark(isDarkScene(scene));
+      setThanks(board);
+    };
+
     const markFound = (world: World) => {
       if (foundKeys.has(world.key)) return;
       foundKeys.add(world.key);
@@ -376,7 +610,7 @@ export default function WalkableWorld({
       }
     };
 
-    const startDrop = (toWorld: World, fromWorld: World | null, now: number) => {
+    const startDrop = (toWorld: Scene, fromWorld: Scene | null, now: number) => {
       lookingNow = false;
       lookUntil = 0;
       hoppingNow = false;
@@ -398,12 +632,16 @@ export default function WalkableWorld({
         toWorld,
         started: reducedMotion ? now - DROP_MS : now,
       };
-      markFound(toWorld);
+      if (!isThanks(toWorld)) {
+        markFound(toWorld);
+      }
       dropHudSwitched = false;
       setDropping(true);
       if (soundRef.current) {
         playDrop();
-        playDiscovery(walkWorlds.findIndex((item) => item.key === toWorld.key));
+        if (!isThanks(toWorld)) {
+          playDiscovery(walkWorlds.findIndex((item) => item.key === toWorld.key));
+        }
       }
     };
 
@@ -438,7 +676,7 @@ export default function WalkableWorld({
 
     const paintWorld = (
       camX: number,
-      theme: World | null,
+      theme: Scene | null,
       walkerX: number,
       ground: number,
       clock: number,
@@ -446,27 +684,39 @@ export default function WalkableWorld({
     ) => {
       const mx = mouse.current.x;
       const my = mouse.current.y;
-      const ink = theme?.key === "ojicra" ? "236,236,232" : "47,48,45";
+      const ink =
+        theme?.key === "ojicra"
+          ? "236,236,232"
+          : theme?.key === "thanks"
+            ? "232,222,188"
+            : "47,48,45";
 
-      for (let i = 0; i < careerYears.length; i += 1) {
-        const year = careerYears[i];
-        const sx = year.x - camX * 0.28;
-        if (sx < -220 || sx > width + 220) continue;
-        const seen = Math.max(0, Math.min(1, (walkerX - year.x + 420) / 520));
-        if (seen <= 0) continue;
-        ctx.save();
-        ctx.globalAlpha = seen * (theme?.key === "ojicra" ? 0.12 : 0.07);
-        ctx.fillStyle = `rgb(${ink})`;
-        ctx.font = "600 132px Inter, Avenir Next, sans-serif";
-        ctx.fillText(year.year, sx, ground - 168);
-        ctx.globalAlpha = seen * 0.28;
-        ctx.font = "500 13px JetBrains Mono, SF Mono, monospace";
-        ctx.fillText(year.label, sx + 8, ground - 132);
-        ctx.restore();
+      if (!isThanks(theme)) {
+        for (let i = 0; i < careerYears.length; i += 1) {
+          const year = careerYears[i];
+          const sx = year.x - camX * 0.28;
+          if (sx < -220 || sx > width + 220) continue;
+          const seen = Math.max(0, Math.min(1, (walkerX - year.x + 420) / 520));
+          if (seen <= 0) continue;
+          ctx.save();
+          ctx.globalAlpha = seen * (theme?.key === "ojicra" ? 0.12 : 0.07);
+          ctx.fillStyle = `rgb(${ink})`;
+          ctx.font = "600 132px Inter, Avenir Next, sans-serif";
+          ctx.fillText(year.year, sx, ground - 168);
+          ctx.globalAlpha = seen * 0.28;
+          ctx.font = "500 13px JetBrains Mono, SF Mono, monospace";
+          ctx.fillText(year.label, sx + 8, ground - 132);
+          ctx.restore();
+        }
       }
 
       ctx.beginPath();
-      ctx.strokeStyle = theme?.key === "ojicra" ? "rgba(236,236,232,0.22)" : "rgba(47,48,45,0.18)";
+      ctx.strokeStyle =
+        theme?.key === "ojicra"
+          ? "rgba(236,236,232,0.22)"
+          : theme?.key === "thanks"
+            ? "rgba(232,222,188,0.22)"
+            : "rgba(47,48,45,0.18)";
       ctx.lineWidth = 1.15;
       const g0 = camX - 20;
       ctx.moveTo(-20, ground + terrain(g0));
@@ -475,6 +725,7 @@ export default function WalkableWorld({
       }
       ctx.stroke();
 
+      if (!isThanks(theme)) {
       for (let i = 0; i < walkWorlds.length; i += 1) {
         const world = walkWorlds[i];
         const sx = world.start - camX;
@@ -493,6 +744,7 @@ export default function WalkableWorld({
         ctx.font = "600 13px Inter, Avenir Next, sans-serif";
         ctx.fillText(world.name, sx + 10, gy - 18);
         ctx.globalAlpha = 1;
+      }
       }
 
       for (let i = 0; i < dots.length; i += 1) {
@@ -518,6 +770,9 @@ export default function WalkableWorld({
           sy += Math.sin(clock * 0.9 + d.phase) * 6;
         } else if (zone === "monoerabi" && interactive) {
           d.size = 1.1 + Math.abs(Math.sin(clock * 1.6 + d.phase)) * 1.4;
+        } else if (zone === "thanks") {
+          sy += Math.sin(clock * 1.3 + d.phase) * 5;
+          sx += Math.cos(clock * 0.7 + d.phase) * 3;
         }
 
         if (interactive) {
@@ -550,6 +805,7 @@ export default function WalkableWorld({
       }
 
       ctx.textBaseline = "middle";
+      if (!isThanks(theme)) {
       for (let i = 0; i < careerSkills.length; i += 1) {
         const skill = careerSkills[i];
         const rise = Math.max(0, Math.min(1, (walkerX - skill.x + 160) / 340));
@@ -576,6 +832,7 @@ export default function WalkableWorld({
         ctx.fill();
         ctx.restore();
       }
+      }
     };
 
     const draw = (now: number) => {
@@ -598,15 +855,20 @@ export default function WalkableWorld({
       const stageH = Math.max(280, height - reserved);
 
       if (dropActive) {
+        if (chalkAudio) {
+          stopChalkWrite();
+          chalkAudio = false;
+        }
         const raw = (now - dropActive.started) / DROP_MS;
         if (raw >= 1) {
           cameraX = dropActive.toCam;
           characterX = dropActive.toX;
           lastKey = dropActive.toWorld.key;
           paper = paperOf(dropActive.toWorld);
-          setArea(dropActive.toWorld);
-          setCursorRgb(dropActive.toWorld.rgb);
-          setDark(dropActive.toWorld.key === "ojicra");
+          applySceneHud(dropActive.toWorld);
+          if (isThanks(dropActive.toWorld) && !thanksAt) {
+            thanksAt = reducedMotion ? now - 4000 : now;
+          }
           burst(
             motes,
             width * 0.38,
@@ -631,9 +893,11 @@ export default function WalkableWorld({
           lookingNow = false;
           setLooking(false);
           const here = worldAt(characterX);
-          const idx = here ? walkWorlds.findIndex((item) => item.key === here.key) : -1;
+          const idx = here && !isThanks(here) ? walkWorlds.findIndex((item) => item.key === here.key) : -1;
           const next = idx >= 0 ? walkWorlds[idx + 1] : undefined;
-          if (next && !foundKeys.has(next.key)) {
+          if (here && !isThanks(here) && idx === walkWorlds.length - 1) {
+            startDrop(THANKS_SCENE, here, now);
+          } else if (next && !foundKeys.has(next.key)) {
             startDrop(next, here || null, now);
           } else {
             hoppingNow = true;
@@ -675,10 +939,11 @@ export default function WalkableWorld({
       const key = current?.key || "";
       if (!dropActive && key !== lastKey) {
         lastKey = key;
-        setArea(current || null);
-        setCursorRgb(current?.rgb || [88, 132, 104]);
-        setDark(current?.key === "ojicra");
-        if (current && !foundKeys.has(current.key)) {
+        applySceneHud(current || null);
+        if (isThanks(current) && !thanksAt) {
+          thanksAt = reducedMotion ? now - 4000 : now;
+        }
+        if (current && !isThanks(current) && !foundKeys.has(current.key)) {
           const idx = walkWorlds.findIndex((item) => item.key === current.key);
           const prev = idx > 0 ? walkWorlds[idx - 1] : null;
           const screenX = characterX - cameraX;
@@ -701,6 +966,7 @@ export default function WalkableWorld({
         !lookingNow &&
         !hoppingNow &&
         current &&
+        !isThanks(current) &&
         facing === 1 &&
         foundKeys.has(current.key) &&
         !looked.has(current.key) &&
@@ -763,6 +1029,8 @@ export default function WalkableWorld({
           current?.rgb || INK,
           3,
         );
+      } else if (!moving && isThanks(current)) {
+        setPose(SIT_CHILL);
       } else if (!moving && now - lastMove > 2800) {
         setPose(SIT);
       } else if (!moving) {
@@ -772,7 +1040,12 @@ export default function WalkableWorld({
       const mx = mouse.current.x;
       const my = mouse.current.y;
       const t = now * 0.001;
-      const ink = current?.key === "ojicra" ? "236,236,232" : "47,48,45";
+      const ink =
+        current?.key === "ojicra"
+          ? "236,236,232"
+          : current?.key === "thanks"
+            ? "232,222,188"
+            : "47,48,45";
       const dropT = dropActive
         ? easeInOutCubic(Math.min(1, (now - dropActive.started) / DROP_MS))
         : 0;
@@ -806,6 +1079,23 @@ export default function WalkableWorld({
         ctx.fillRect(0, 0, width, height);
         paintWorld(cameraX, current || null, characterX, ground, t, true);
 
+        if (isThanks(current) && thanksAt) {
+          const write = Math.max(0, Math.min(1, (now - thanksAt) / 5600));
+          paintBlackboard(ctx, width, height, ground, t, write);
+          const scraping =
+            !reducedMotion && soundRef.current && write > 0.03 && write < 0.97;
+          if (scraping && !chalkAudio) {
+            startChalkWrite();
+            chalkAudio = true;
+          } else if (!scraping && chalkAudio) {
+            stopChalkWrite();
+            chalkAudio = false;
+          }
+        } else if (chalkAudio) {
+          stopChalkWrite();
+          chalkAudio = false;
+        }
+
         const upcoming = walkWorlds.find((world) => world.start > characterX + 40);
         if (upcoming) {
           const dist = upcoming.start - characterX;
@@ -830,16 +1120,18 @@ export default function WalkableWorld({
 
       if (dropActive && dropT > 0.45 && !dropHudSwitched) {
         dropHudSwitched = true;
-        setArea(dropActive.toWorld);
-        setCursorRgb(dropActive.toWorld.rgb);
-        setDark(dropActive.toWorld.key === "ojicra");
+        applySceneHud(dropActive.toWorld);
       }
 
       if (current && !dropActive && weather.length < 70) {
         const tone = current.rgb;
         for (let n = 0; n < 2; n += 1) {
           const kind =
-            current.key === "taupe" || current.key === "ojicra" ? "dash" : current.key === "islog" || current.key === "monoomoi" ? "spark" : "drop";
+            current.key === "taupe" || current.key === "ojicra"
+              ? "dash"
+              : current.key === "islog" || current.key === "monoomoi" || current.key === "thanks"
+                ? "spark"
+                : "drop";
           weather.push({
             x: cameraX + Math.random() * width,
             y:
@@ -998,7 +1290,14 @@ export default function WalkableWorld({
     const down = (event: KeyboardEvent) => {
       if (event.key === "a" || event.key === "A" || event.key === "ArrowLeft") {
         const here = dropActive?.toWorld || worldAt(characterX);
-        const index = here ? walkWorlds.findIndex((world) => world.key === here.key) : -1;
+        if (isThanks(here) && !event.repeat && !dropActive) {
+          keys.current.left = false;
+          startDrop(walkWorlds[walkWorlds.length - 1], THANKS_SCENE, performance.now());
+          unlockAtlasSound();
+          event.preventDefault();
+          return;
+        }
+        const index = here && !isThanks(here) ? walkWorlds.findIndex((world) => world.key === here.key) : -1;
         if (!event.repeat && !dropActive && index > 0) {
           keys.current.left = false;
           startDrop(walkWorlds[index - 1], here || null, performance.now());
@@ -1045,6 +1344,7 @@ export default function WalkableWorld({
     return () => {
       cancelAnimationFrame(frame);
       window.clearTimeout(boot);
+      stopChalkWrite(true);
       window.removeEventListener("resize", resize);
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
@@ -1057,7 +1357,7 @@ export default function WalkableWorld({
     <main
       id="main"
       tabIndex={-1}
-      className={`home-game${ready ? " is-ready" : ""}${dark ? " is-dark" : ""}${dropping ? " is-world-drop" : ""}`}
+      className={`home-game${ready ? " is-ready" : ""}${dark ? " is-dark" : ""}${thanks ? " is-thanks" : ""}${dropping ? " is-world-drop" : ""}`}
       aria-label="Walk through the world"
       data-world-cursor="active"
     >
@@ -1135,7 +1435,28 @@ export default function WalkableWorld({
           </a>
         </aside>
       ) : null}
-      {complete ? (
+      {thanks ? (
+        <>
+          <p className="game-finish-banner" role="status">
+            <span>Finish</span>
+            <small>Walk complete</small>
+          </p>
+          <aside className="game-constellation game-thanks-card is-visible">
+            <p className="game-card__kicker">end of the atlas</p>
+            <p className="game-constellation__title">Thanks for visiting.</p>
+            <button
+              type="button"
+              onClick={() => {
+                unlockAtlasSound();
+                downloadCareerConstellation();
+              }}
+            >
+              Download atlas
+            </button>
+            <a href="/contact">Say hello</a>
+          </aside>
+        </>
+      ) : complete ? (
         <aside className="game-constellation is-visible">
           <p className="game-card__kicker">constellation complete</p>
           <p className="game-constellation__title">Six chapters, walked.</p>
@@ -1157,7 +1478,9 @@ export default function WalkableWorld({
           onPointerDown={() => {
             unlockAtlasSound();
             const index = area ? walkWorlds.findIndex((world) => world.key === area.key) : -1;
-            if (index > 0) {
+            if (thanks) {
+              jumpRef.current = walkWorlds[walkWorlds.length - 1].key;
+            } else if (index > 0) {
               jumpRef.current = walkWorlds[index - 1].key;
             } else {
               keys.current.left = true;
