@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import HeroPortrait from "@/components/HeroPortrait";
-import { experience, projects, site, walkWorlds } from "@/lib/content";
+import { awards, experience, googleAds, projects, site, walkWorlds } from "@/lib/content";
 
 const FEATURED_PROJECTS = projects
   .filter((project): project is (typeof projects)[number] & { image: string } =>
@@ -30,7 +30,13 @@ export default function LivingAtlas({ onReturn }: { onReturn?: () => void }) {
 
         <header className="home-fallback__intro home-milestone">
           <div className="home-fallback__intro-copy">
-            <p className="home-fallback__eyebrow">{site.gender}, {site.location}</p>
+            <div className="home-hero-marks">
+              <p className="home-fallback__eyebrow">{site.gender}, {site.location}</p>
+              <span className="home-remote-badge">
+                <i />
+                Remote work
+              </span>
+            </div>
             <h1>
               <span className="home-fallback__subject">Hi, I&apos;m {site.person}.</span>
               <span className="home-fallback__statement">I build fast, scalable<br />web products.</span>
@@ -81,8 +87,62 @@ export default function LivingAtlas({ onReturn }: { onReturn?: () => void }) {
           </div>
         </section>
 
+        <section className="home-ads home-milestone" aria-labelledby="home-ads-title">
+          <div className="home-section-head">
+            <div>
+              <p>02 / GOOGLE ADS</p>
+              <h2 id="home-ads-title">Campaigns that brought in leads.</h2>
+            </div>
+          </div>
+          <p className="home-ads__lede">{googleAds.summary}</p>
+          <div className="home-ads-grid">
+            {googleAds.campaigns.map((campaign) => (
+              <article className="home-ad-card" key={campaign.name}>
+                <div className="home-ad-card__visual paper-print">
+                  <Image
+                    src={campaign.image}
+                    alt={`${campaign.name} Google Ads results`}
+                    fill
+                    sizes="(max-width: 900px) 100vw, 50vw"
+                  />
+                </div>
+                <p className="home-ad-card__metric">{campaign.metric}</p>
+                <h3>{campaign.name}</h3>
+                <p>{campaign.detail}</p>
+              </article>
+            ))}
+          </div>
+          <ul className="home-ads__notes">
+            {googleAds.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="home-awards home-milestone" aria-labelledby="home-awards-title">
+          <div className="home-section-head">
+            <div>
+              <p>03 / APPRECIATION</p>
+              <h2 id="home-awards-title">Awards.</h2>
+            </div>
+          </div>
+          <div className="home-awards-grid">
+            {awards.map((award) => (
+              <article className="home-award-card" key={award.org}>
+                <span className="home-award-stamp" aria-hidden="true">
+                  Award
+                  <b>winner</b>
+                </span>
+                <p className="home-award-card__kicker">{award.org}</p>
+                <h3>{award.title}</h3>
+                <p>{award.detail}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <section className="home-now home-milestone">
-          <p className="home-section-index">02 / NOW</p>
+          <p className="home-section-index">04 / NOW</p>
           <div>
             <h2>Building production platforms at {now.org}.</h2>
             <p>{now.summary}</p>
@@ -92,14 +152,14 @@ export default function LivingAtlas({ onReturn }: { onReturn?: () => void }) {
 
         <section className="home-career-preview home-milestone">
           <div className="home-section-head">
-            <div><p>03 / EXPERIENCE</p><h2>A career across products and platforms.</h2></div>
+            <div><p>05 / EXPERIENCE</p><h2>A career across products and platforms.</h2></div>
             <Link className="link-arrow" href="/experience">Full timeline</Link>
           </div>
           <ol>{experience.map((item) => <li key={item.org}><span>{item.period}</span><div><h3>{item.org}</h3><p>{item.role}{item.location ? ` · ${item.location}` : ""}</p></div></li>)}</ol>
         </section>
 
         <section className="home-contact-cta home-milestone">
-          <p className="home-section-index">04 / LET&apos;S TALK</p>
+          <p className="home-section-index">06 / LET&apos;S TALK</p>
           <h2>Have a product, platform, or technical challenge in mind?</h2>
           <p>I&apos;m always open to thoughtful opportunities and interesting collaborations.</p>
           <div className="home-hero__actions">

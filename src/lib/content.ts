@@ -388,4 +388,38 @@ export const stack = [
   "MySQL",
   "Firebase",
   "Framer Motion",
+  "Google Ads",
+];
+
+export const googleAds = {
+  summary:
+    "Alongside product engineering I have run Google Ads for service businesses — search, landing pages, and conversion work. Campaigns for Meeraj Towing and Irfan Towing, with SEO and performance on the same sites.",
+  campaigns: [
+    {
+      name: "Irfan Towing Service",
+      metric: "67%",
+      detail: "increase in qualified leads through targeted Google Ads campaigns",
+      image: "/client-ad-1.png",
+    },
+    {
+      name: "Meeraj Towing Service",
+      metric: "45%",
+      detail: "increase in qualified leads; conversion rates improved about 60%",
+      image: "/client-ad-2.png",
+    },
+  ],
+  notes: [
+    "Google Ads campaign management for multiple clients",
+    "SEO ranking improvements of 50+ positions on client sites",
+    "Page load times reduced about 40% on those properties",
+  ],
+};
+
+export const awards = [
+  {
+    title: "Appreciation Award",
+    org: "TEDxAlBateen",
+    detail:
+      "Recognition for outstanding contribution and excellence in technical execution. Built the event platform — registrations, speaker management, and live coordination — in Laravel and Vue.js.",
+  },
 ];

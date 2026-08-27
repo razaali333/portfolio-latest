@@ -453,4 +453,378 @@ export const faqSeed: FaqSeed[] = [
       },
     ],
   },
+  {
+    category: "stack",
+    prompt: "Do you work with Vue.js?",
+    aliases: ["vue", "vuejs", "do you know vue"],
+    answers: [
+      {
+        variant: "default",
+        body: "Yes. fujtown.com is Laravel with Vue.js for the directory UI: registration, listings, search, and roles. I reach for React or Next.js on new fronts, and Vue when the product is already there.",
+      },
+    ],
+  },
+  {
+    category: "stack",
+    prompt: "Do you use Tailwind CSS?",
+    aliases: ["tailwind", "bootstrap", "css frameworks"],
+    answers: [
+      {
+        variant: "default",
+        body: "Yes. Tailwind on Fujtown-era and current React/Next work. I also ship Bootstrap when that is the existing design system, as on FOIZ and SisTouristVilla.",
+      },
+    ],
+  },
+  {
+    category: "stack",
+    prompt: "What is your experience with PHP?",
+    aliases: ["php developer", "plain php", "codeigniter"],
+    answers: [
+      {
+        variant: "default",
+        body: "PHP since 2015. Laravel and CodeIgniter in production at Aursoft and Fujtown. Inventory/POS at inventory.aursoft.com is CodeIgniter 3 with Sencha. I still take PHP products that have to stay live, not only greenfield Next.js.",
+      },
+    ],
+  },
+  {
+    category: "stack",
+    prompt: "Do you work with Firebase?",
+    aliases: ["firebase", "google firebase", "realtime database"],
+    answers: [
+      {
+        variant: "default",
+        body: "Yes. Firebase showed up in backend work at Ferisoft alongside Node and Laravel. I use it when auth, hosting, or realtime fits; SQL stays the default for booking and inventory.",
+      },
+    ],
+  },
+  {
+    category: "stack",
+    prompt: "Can you build authentication and role-based access?",
+    aliases: ["login system", "user roles", "admin permissions", "rbac"],
+    answers: [
+      {
+        variant: "default",
+        body: "Yes. Directories and coaching platforms need businesses vs admins, students vs operators. fujtown.com has authentication and role-based access. I wire the roles to the real jobs, not a generic user table.",
+      },
+    ],
+  },
+  {
+    category: "stack",
+    prompt: "Do you build admin dashboards?",
+    aliases: ["admin panel", "cms", "back office", "operations dashboard"],
+    answers: [
+      {
+        variant: "default",
+        body: "Yes. Listing management, booking/ops screens, inventory, invoices, and reporting. The driving-school platform includes scheduling and pass-rate reporting. Admin tools are usually Laravel or a React/Next front on the same APIs.",
+      },
+    ],
+  },
+  {
+    category: "services",
+    prompt: "Can you help with SEO and page speed?",
+    aliases: ["core web vitals", "slow website", "google ranking", "lighthouse"],
+    answers: [
+      {
+        variant: "default",
+        body: "Yes. Performance and SEO are part of how I ship, not an add-on slide. Public sites at Fujtown and Centurion work need to stay fast. Send the URL and whether the pain is crawl, LCP, or a heavy admin.",
+      },
+    ],
+  },
+  {
+    category: "services",
+    prompt: "Do you make websites mobile responsive?",
+    aliases: ["mobile friendly", "responsive design", "works on phone"],
+    answers: [
+      {
+        variant: "default",
+        body: "Yes. Public products are built to work on a phone first. Directories, booking, and coaching UIs are useless if they only look right on a laptop. I check the flows that matter on a small screen, not only a desktop mock.",
+      },
+    ],
+  },
+  {
+    category: "services",
+    prompt: "Can you build a bilingual English and Arabic site?",
+    aliases: ["arabic website", "rtl", "multilingual", "two languages"],
+    answers: [
+      {
+        variant: "default",
+        body: "Yes. Fujairah Fine Arts Academy is a bilingual English/Arabic layout. RTL, copy in two languages, and a CMS the staff can actually edit are the usual constraints. Tell me which language is source of truth.",
+      },
+    ],
+  },
+  {
+    category: "projects",
+    prompt: "Tell me about the FOIZ project.",
+    aliases: ["foiz", "fujairah oil", "oil marketplace"],
+    answers: [
+      {
+        variant: "default",
+        body: "FOIZ is the Fujairah Oil Industry Zone marketplace. I worked on API and backend queries in Laravel and PostgreSQL, plus feature work and UI improvements. Live at foiz.gov.ae.",
+      },
+    ],
+  },
+  {
+    category: "projects",
+    prompt: "Tell me about SisTouristVilla.",
+    aliases: ["hotel website", "sistouristvilla", "villa booking"],
+    answers: [
+      {
+        variant: "default",
+        body: "SisTouristVilla is a hotel booking site I led: planning, design, payment gateway, and APIs so guests can book rooms online. PHP, JavaScript, MySQL, Bootstrap 5. Live at sistouristvilla.com.",
+      },
+    ],
+  },
+  {
+    category: "projects",
+    prompt: "Tell me about fujtown.com.",
+    aliases: ["fujtown directory", "business listing site"],
+    answers: [
+      {
+        variant: "default",
+        body: "fujtown.com is a full-stack business directory: registration, listing management, search, auth, and roles for businesses and admins. Laravel and Vue.js. I also did product-based full-stack work at Fujtown LLC from 2023 to May 2026.",
+      },
+    ],
+  },
+  {
+    category: "projects",
+    prompt: "Have you built an inventory or POS system?",
+    aliases: ["inventory software", "point of sale", "stock management"],
+    answers: [
+      {
+        variant: "default",
+        body: "Yes. inventory.aursoft.com is inventory and POS in CodeIgniter 3 and Ext-Sencha: live stock, low-stock alerts, invoices, customers, and sales reporting. At Fujtown a custom inventory build improved stock-tracking accuracy by about 35%.",
+      },
+    ],
+  },
+  {
+    category: "projects",
+    prompt: "Have you built a learning or coaching platform?",
+    aliases: ["online courses", "fitness app", "ypt", "lms"],
+    answers: [
+      {
+        variant: "default",
+        body: "Yes. The coaching product uses Next.js and Laravel: auth, payments, subscriptions, courses and challenges, onboarding questionnaires, calorie calculators, and progress tracking. That is the closest public example of a membership product.",
+      },
+    ],
+  },
+  {
+    category: "process",
+    prompt: "Who owns the code and the accounts when we finish?",
+    aliases: ["intellectual property", "source code ownership", "github access", "who owns the repo"],
+    answers: [
+      {
+        variant: "default",
+        body: "You keep the product accounts: domain, host, GitHub, payments. I deliver the repo and a handover. I don’t hold the keys after the work unless you ask me to retain on a named account.",
+      },
+    ],
+  },
+  {
+    category: "process",
+    prompt: "Do you provide documentation and handover?",
+    aliases: ["docs", "readme", "how do we take over", "knowledge transfer"],
+    answers: [
+      {
+        variant: "default",
+        body: "Yes. Env list, how to deploy, and the few commands that matter. At Fujtown, documentation cut project delays about 20%. I won’t write a novel nobody reads — I’ll write what the next engineer needs.",
+      },
+    ],
+  },
+  {
+    category: "process",
+    prompt: "How do you handle change requests after we agree scope?",
+    aliases: ["scope creep", "extra features", "revisions", "change order"],
+    answers: [
+      {
+        variant: "default",
+        body: "If it changes the outcome, we re-quote that slice. Small copy and layout fixes inside the agreed screens stay in the work. I would rather pause and price a new module than silently grow a fixed bid.",
+      },
+    ],
+  },
+  {
+    category: "process",
+    prompt: "Do you work from Figma or do you also design?",
+    aliases: ["ui design", "figma", "do you need a designer", "ux"],
+    answers: [
+      {
+        variant: "default",
+        body: "I can implement a Figma file tightly, and I have worked with design on interfaces that lifted engagement. I am not a brand studio. If you have no designer, we keep the UI simple and consistent rather than inventing a visual identity from nothing.",
+      },
+    ],
+  },
+  {
+    category: "process",
+    prompt: "What do you need from me to start?",
+    aliases: ["requirements", "brief", "kickoff", "what access do you need"],
+    answers: [
+      {
+        variant: "default",
+        body: "Goal, URL or references, timing, and a budget mark (the contact form covers that). Then repo or host access, payment credentials if we touch checkout, and who signs off. A one-page brief beats a 40-page spec that nobody maintains.",
+      },
+    ],
+  },
+  {
+    category: "process",
+    prompt: "Do you use Git and code review?",
+    aliases: ["github", "version control", "pull requests", "ci cd"],
+    answers: [
+      {
+        variant: "default",
+        body: "Yes. GitHub is how the work moves. At Aursoft, automated deploys shortened release cycles about 40%. Staging, then production. You can see the history; I don’t ship from a laptop unzip.",
+      },
+    ],
+  },
+  {
+    category: "process",
+    prompt: "How do you handle security on a web app?",
+    aliases: ["security", "https", "sql injection", "xss", "hardening"],
+    answers: [
+      {
+        variant: "default",
+        body: "Auth that is actually checked, parameterized queries, HTTPS, and least privilege on the server. At Fujtown, cPanel and server hardening cut downtime about 15%. I don’t run a pentest theatre on a brochure site; I do lock the doors that production actually uses.",
+      },
+    ],
+  },
+  {
+    category: "collaboration",
+    prompt: "Can you subcontract for an agency?",
+    aliases: ["white label", "agency developer", "overflow work"],
+    answers: [
+      {
+        variant: "default",
+        body: "Yes, for scoped Laravel/React/Next/PHP work, including existing codebases. I stay in your tools and your client’s name if that is the deal. NDA first if the end client is confidential.",
+      },
+    ],
+  },
+  {
+    category: "collaboration",
+    prompt: "Do you speak English well enough for client work?",
+    aliases: ["english", "language", "communication skills"],
+    answers: [
+      {
+        variant: "default",
+        body: "Yes. Professional work has been in English across Pakistan, Türkiye (remote), the UAE, and the Maldives. I write status in plain sentences. Arabic UI copy I implement; I don’t pretend to be a native Arabic copywriter.",
+      },
+    ],
+  },
+  {
+    category: "pricing",
+    prompt: "How do payments work?",
+    aliases: ["invoice", "deposit", "payment terms", "milestone payments"],
+    answers: [
+      {
+        variant: "default",
+        body: "Quoted in USD. Typical shape is a start payment, then the rest on agreed slices you can click. Exact split is in the quote, not a surprise at the end. The contact form’s USD 100–5,000 slider is the conversation starter, not a hidden hourly trap.",
+      },
+    ],
+  },
+  {
+    category: "pricing",
+    prompt: "Do you build WordPress sites?",
+    aliases: ["wordpress", "elementor", "woocommerce"],
+    answers: [
+      {
+        variant: "default",
+        body: "Not as a WordPress specialist. If you need custom PHP, Laravel, React, or Next.js, that is the work. A simple WP brochure is usually faster with someone who lives in that stack. I can still rescue a PHP site that has grown past a theme.",
+      },
+    ],
+  },
+  {
+    category: "pricing",
+    prompt: "Do you build native iOS or Android apps?",
+    aliases: ["mobile app", "react native", "flutter", "app store"],
+    answers: [
+      {
+        variant: "default",
+        body: "No native apps. I build web products that work well on a phone, including booking and membership flows. If you need App Store binaries, pair me with a mobile engineer or keep the product on the web.",
+      },
+    ],
+  },
+  {
+    category: "availability",
+    prompt: "Do you work weekends or evenings?",
+    aliases: ["after hours", "timezone overlap", "weekend work"],
+    answers: [
+      {
+        variant: "default",
+        body: "Centurion is the weekday job. Freelance sits around that — evenings and planned windows, not 24/7 chat. Europe and Gulf overlap is fine with async notes. Rush weekends get called out in the quote.",
+      },
+    ],
+  },
+  {
+    category: "availability",
+    prompt: "Are you hiring or looking for a full-time job?",
+    aliases: ["job offer", "join our company", "full time role", "relocation"],
+    answers: [
+      {
+        variant: "default",
+        body: "I am employed at Centurion PLC (July 2026–present). I take selected freelance and product work. A full-time move is a different conversation — use the contact form and say so clearly.",
+      },
+    ],
+  },
+  {
+    category: "experience",
+    prompt: "What did you do at Centurion PLC?",
+    aliases: ["centurion plc", "current job", "maldives job"],
+    answers: [
+      {
+        variant: "default",
+        body: "Full-stack engineer since July 2026: production web platforms after the Fujtown handover. React, Next.js, Laravel, and PHP — UI, APIs, and deploys, with performance and SEO on live systems.",
+      },
+    ],
+  },
+  {
+    category: "experience",
+    prompt: "What did you do at Fujtown?",
+    aliases: ["fujtown llc", "uae experience"],
+    answers: [
+      {
+        variant: "default",
+        body: "Full-stack product work, March 2023–May 2026, Fujairah: React, Next.js, Tailwind, Laravel, CodeIgniter, PostgreSQL/MySQL. Directory and booking products, inventory accuracy, less downtime, fewer production bugs. fujtown.com is the public directory.",
+      },
+    ],
+  },
+  {
+    category: "experience",
+    prompt: "What is your education?",
+    aliases: ["degree", "university", "bscs", "diploma"],
+    answers: [
+      {
+        variant: "default",
+        body: "BSCS, AWKUM University, 2015–2019, and a Diploma in Information Technology. The useful part is production work since 2018, not the paper.",
+      },
+    ],
+  },
+  {
+    category: "experience",
+    prompt: "Where can I see your GitHub or résumé?",
+    aliases: ["github", "cv", "resume", "linkedin"],
+    answers: [
+      {
+        variant: "default",
+        body: "GitHub github.com/razaali333, LinkedIn linkedin.com/in/raza-ali-626a12190, résumé at razaali.vercel.app/resume.pdf. Live products are on /work — that is stronger than a repo dump.",
+      },
+    ],
+  },
+  {
+    category: "maintenance",
+    prompt: "What happens if something breaks after launch?",
+    aliases: ["bugs after go live", "hotfix", "production issue"],
+    answers: [
+      {
+        variant: "default",
+        body: "Defects from the build get fixed. New ideas are new work or a retainer. If you want me on-call for uptime, say so up front so it is in the quote, not assumed.",
+      },
+    ],
+  },
+  {
+    category: "contact",
+    prompt: "Why should I hire you instead of an agency?",
+    aliases: ["why you", "vs agency", "vs freelancer marketplace"],
+    answers: [
+      {
+        variant: "default",
+        body: "You talk to the person who ships. 8+ years of live Laravel/React/PHP products — directories, booking, APIs, inventory — not a bench of juniors. Agencies are right for brand theatre; I am right when the site has to stay up.",
+      },
+    ],
+  },
 ];
