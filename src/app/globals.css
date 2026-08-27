@@ -2969,9 +2969,19 @@ html[data-world-cursor="active"] .to-top {
 
 .home-ad-card__visual {
   position: relative;
-  min-height: 280px;
   margin-bottom: 18px;
-  background: #f3f2ee;
+  overflow: hidden;
+  background: #ecebe6;
+  box-shadow: 0 0 0 1px rgba(55, 55, 50, 0.08);
+}
+
+.home-ad-card__visual img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter: none;
+  mix-blend-mode: normal;
 }
 
 .home-ad-card__metric {

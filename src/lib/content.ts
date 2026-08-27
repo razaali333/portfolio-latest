@@ -400,12 +400,16 @@ export const googleAds = {
       metric: "67%",
       detail: "increase in qualified leads through targeted Google Ads campaigns",
       image: "/client-ad-1.png",
+      width: 1226,
+      height: 807,
     },
     {
       name: "Meeraj Towing Service",
       metric: "45%",
       detail: "increase in qualified leads; conversion rates improved about 60%",
       image: "/client-ad-2.png",
+      width: 1574,
+      height: 850,
     },
   ],
   notes: [
