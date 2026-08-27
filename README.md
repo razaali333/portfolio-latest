@@ -7,23 +7,7 @@ A Next.js portfolio with an interactive canvas-based career atlas, project case 
 - Node.js 20 or newer
 - npm 10 or newer
 
-## Local development
 
-```bash
-npm install
-npm run dev
-```
-
-Open `http://localhost:3000`.
-
-## Quality checks
-
-```bash
-npm run test
-npm run typecheck
-npm run lint
-npm run build
-```
 
 Run the complete verification pipeline with `npm run check`.
 
