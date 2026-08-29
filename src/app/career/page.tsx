@@ -33,6 +33,11 @@ function CareerWalk() {
   }, []);
 
   useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      sessionStorage.setItem("career-intro-seen", "1");
+      setIntroOpen(false);
+      return;
+    }
     if (!params.get("at") && !sessionStorage.getItem("career-intro-seen")) setIntroOpen(true);
   }, [params]);
 
@@ -79,7 +84,7 @@ function CareerWalk() {
             aria-controls="career-overview"
             onClick={() => setOverviewOpen(true)}
           >
-            Quick overview
+            Timeline
           </button>
           <a className="career-resume-link" href={site.resume} target="_blank" rel="noreferrer">
             Resume
@@ -126,24 +131,24 @@ function CareerWalk() {
       {introOpen ? (
         <section className="career-intro" role="dialog" aria-modal="true" aria-labelledby="career-intro-title">
           <div className="career-intro__card">
-            <p>Interactive career atlas · 2015—present</p>
-            <h1 id="career-intro-title">How would you like to explore?</h1>
-            <span>Walk through six chapters, take a guided 60-second tour, or get the quick timeline overview.</span>
+            <p>Career · 2015—present</p>
+            <h1 id="career-intro-title">Read the timeline, or walk it.</h1>
+            <span>Roles, dates, and impact are on every chapter. Use the timeline if you need the résumé version first.</span>
             <div className="career-intro__buttons">
               <button
                 type="button"
                 className="career-intro__btn-primary"
+                autoFocus
                 onClick={() => {
                   sessionStorage.setItem("career-intro-seen", "1");
                   setIntroOpen(false);
-                  setAutoTour(true);
+                  setOverviewOpen(true);
                 }}
               >
-                Guided 60s tour
+                Open timeline
               </button>
               <button
                 type="button"
-                autoFocus
                 onClick={() => {
                   sessionStorage.setItem("career-intro-seen", "1");
                   setIntroOpen(false);
@@ -156,10 +161,10 @@ function CareerWalk() {
                 onClick={() => {
                   sessionStorage.setItem("career-intro-seen", "1");
                   setIntroOpen(false);
-                  setOverviewOpen(true);
+                  setAutoTour(true);
                 }}
               >
-                Timeline list
+                Guided 60s tour
               </button>
             </div>
           </div>
@@ -191,15 +196,21 @@ function CareerWalk() {
             Full-stack developer building web products with React, Next.js, Laravel, Node.js, and PHP.
           </p>
           <ol className="career-timeline">
-            {walkWorlds.slice(0, -1).map((world) => (
+            {walkWorlds.map((world) => (
               <li key={world.key} style={{ ["--timeline-color" as string]: world.rgb.join(" ") }}>
                 <span className="career-timeline__dot" aria-hidden="true" />
                 <div>
                   <p className="career-timeline__date">{world.role}</p>
                   <h2>{world.name}</h2>
                   <p className="career-timeline__label">{world.label}</p>
+                  {world.location ? <p className="career-timeline__place">{world.location}</p> : null}
                   <p>{world.description}</p>
                   <p className="career-timeline__achievement">{world.achievement}</p>
+                  <ul className="career-timeline__proof">
+                    {world.bullets.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
                   <button type="button" onClick={() => {
                     setDestination(world.slug);
                     setNavigationNonce((value) => value + 1);

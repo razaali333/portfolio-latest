@@ -45,3 +45,15 @@ test("career experience provides a valid main landmark", async () => {
   const career = await read("src/components/WalkableWorld.tsx");
   assert.match(career, /<main\s+id="main"/);
 });
+
+test("career walk keeps recruiter proof visible", async () => {
+  const content = await read("src/lib/content.ts");
+  const world = await read("src/components/WalkableWorld.tsx");
+  const layout = await read("src/app/career/layout.tsx");
+  assert.match(content, /improved stock-tracking accuracy by 35%/);
+  assert.match(content, /Production delivery/);
+  assert.match(world, /game-card__proof/);
+  assert.match(world, /area\.description/);
+  assert.match(layout, /Career and experience/);
+  assert.match(layout, /CareerTimeline/);
+});

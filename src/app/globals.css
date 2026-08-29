@@ -1794,7 +1794,8 @@ html[data-world-cursor="active"] .to-top {
   z-index: 100;
   display: grid;
   place-items: center;
-  padding: 20px;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  overflow-y: auto;
   background: rgba(22, 24, 23, 0.48);
   backdrop-filter: blur(12px);
 }
@@ -1980,6 +1981,51 @@ html[data-world-cursor="active"] .to-top {
 }
 
 .career-timeline__achievement { padding-left: 10px; border-left: 2px solid rgb(var(--timeline-color)); color: #2f302d !important; }
+.career-timeline__place { margin: 6px 0 0; color: rgba(47, 48, 45, 0.55); font-size: 12px; }
+.career-timeline__proof { margin: 12px 0 0; padding: 0 0 0 18px; color: rgba(47, 48, 45, 0.72); font-size: 14px; line-height: 1.5; }
+.career-timeline__proof li { margin: 6px 0 0; }
+.career-timeline__stack { margin: 12px 0 0; color: rgba(47, 48, 45, 0.55); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; }
+
+.career-static {
+  width: min(720px, 100%);
+  margin: 0 auto;
+  padding: 88px var(--gutter, 20px) 80px;
+  color: #2f302d;
+}
+.career-static h1 { margin: 8px 0 0; font-size: clamp(34px, 5vw, 58px); line-height: 1; letter-spacing: -0.035em; }
+.career-static__links { display: flex; flex-wrap: wrap; gap: 12px 18px; margin: 28px 0 0; }
+.career-static__links a { color: inherit; font-size: 13px; }
+
+html[data-act="i"] .career-static {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-act="i"] .career-static {
+    position: relative;
+    width: min(720px, 100%);
+    height: auto;
+    margin: 0 auto;
+    padding: 88px var(--gutter, 20px) 80px;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+  }
+
+  html[data-act="i"] .home-game,
+  html[data-act="i"] .career-intro,
+  html[data-act="i"] .career-recruiter-cta {
+    display: none;
+  }
+}
 
 .career-overview__actions {
   position: sticky;
@@ -2235,6 +2281,7 @@ html[data-world-cursor="active"] .to-top {
 .game-brand span,
 .game-card__kicker {
   display: block;
+  margin: 0;
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.12em;
@@ -2464,7 +2511,10 @@ html[data-world-cursor="active"] .to-top {
   right: 46px;
   bottom: 46px;
   z-index: 12;
-  width: min(420px, 38vw);
+  display: flex;
+  flex-direction: column;
+  width: min(440px, calc(100vw - 80px));
+  max-height: min(68vh, calc(100dvh - 140px));
   padding: 28px 30px 26px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.82));
   backdrop-filter: blur(14px);
@@ -2474,6 +2524,7 @@ html[data-world-cursor="active"] .to-top {
   opacity: 0;
   transform: translate3d(18px, 18px, 0);
   pointer-events: none;
+  overflow: hidden;
 }
 
 .game-card.is-visible {
@@ -2513,16 +2564,35 @@ html[data-world-cursor="active"] .to-top {
 }
 
 .game-card__title {
+  flex: 0 0 auto;
   margin: 10px 0 0;
   font-size: clamp(26px, 3vw, 42px);
   font-weight: 620;
   line-height: 1.04;
+  overflow-wrap: break-word;
+}
+
+.game-card__kicker,
+.game-card__role {
+  flex: 0 0 auto;
+}
+
+.game-card__body {
+  min-height: 0;
+  margin-top: 4px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 .game-card p {
   margin: 15px 0 0;
   color: rgba(38, 38, 38, 0.72);
   font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: break-word;
 }
 
 .game-card__role,
@@ -2550,6 +2620,7 @@ html[data-world-cursor="active"] .to-top {
 .game-card__ask button,
 .game-card__links button {
   justify-self: start;
+  max-width: 100%;
   margin: 0;
   border: 1px solid rgba(68, 68, 68, 0.22);
   background: rgba(253, 253, 252, 0.9);
@@ -2557,7 +2628,10 @@ html[data-world-cursor="active"] .to-top {
   color: inherit;
   font: inherit;
   font-size: 13px;
+  line-height: 1.35;
   text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
   cursor: pointer;
 }
 
@@ -2578,12 +2652,26 @@ html[data-world-cursor="active"] .to-top {
 
 .game-card__links {
   display: flex;
+  flex: 0 0 auto;
   flex-wrap: wrap;
   gap: 14px 22px;
   margin-top: 18px;
 }
 
-.game-card__impact { display: grid; gap: 4px; padding-left: 10px; border-left: 2px solid var(--teal); }
+.game-card__place {
+  margin: 6px 0 0;
+  color: rgba(38, 38, 38, 0.55);
+  font-size: 12px;
+}
+.game-card__proof {
+  margin: 12px 0 0;
+  padding: 0 0 0 16px;
+  color: rgba(38, 38, 38, 0.72);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.game-card__proof li { margin: 6px 0 0; }
+.game-card__impact { display: grid; gap: 4px; margin-top: 15px; padding-left: 10px; border-left: 2px solid var(--teal); overflow-wrap: anywhere; }
 .game-card__impact b { color: inherit; font-family: var(--font-mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; }
 .game-card__stack { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0; padding: 0; list-style: none; }
 .game-card__stack li { padding: 4px 7px; border: 1px solid rgba(68,68,68,.16); font-size: 10px; }
@@ -2639,7 +2727,9 @@ html[data-world-cursor="active"] .to-top {
   color: #ecece8;
 }
 
-.home-game.is-dark .game-card p {
+.home-game.is-dark .game-card p,
+.home-game.is-dark .game-card__proof,
+.home-game.is-dark .game-card__place {
   color: rgba(236, 236, 232, 0.7);
 }
 
@@ -2661,7 +2751,13 @@ html[data-world-cursor="active"] .to-top {
   left: 34px;
   bottom: 46px;
   z-index: 12;
-  width: min(280px, 46vw);
+  display: flex;
+  flex-direction: column;
+  width: min(320px, calc(100vw - 68px));
+  max-height: min(62vh, calc(100dvh - 140px));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 18px 20px 16px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.82));
   backdrop-filter: blur(14px);
@@ -3659,14 +3755,20 @@ html[data-world-cursor="active"] .to-top {
     display: none;
   }
 
-  .career-recruiter-cta { right: 16px; bottom: 82px; left: 16px; justify-content: center; }
+  .career-recruiter-cta {
+    right: auto;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    left: 16px;
+    max-width: calc(100% - 196px);
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
   .career-recruiter-cta span { display: none; }
   .career-recruiter-cta a:first-of-type { border-left: 0; padding-left: 0; }
-  .career-mobile-coach { position: fixed; right: 16px; bottom: 148px; left: 16px; z-index: 60; display: flex; align-items: center; gap: 12px; padding: 14px; background: #2f302d; color: #fdfdfc; box-shadow: 0 16px 50px rgba(0,0,0,.24); }
+  .career-mobile-coach { position: fixed; right: 16px; top: 88px; left: 16px; bottom: auto; z-index: 60; display: flex; align-items: center; gap: 12px; padding: 14px; background: #2f302d; color: #fdfdfc; box-shadow: 0 16px 50px rgba(0,0,0,.24); }
   .career-mobile-coach p { margin: 0; font-size: 12px; line-height: 1.45; }
   .career-mobile-coach b { display: block; margin-bottom: 2px; }
   .career-mobile-coach button { flex: 0 0 auto; border: 1px solid rgba(253,253,252,.4); background: transparent; padding: 8px 10px; color: inherit; }
-  .game-card__impact, .game-card__stack { display: none; }
   .game-atlas button span, .game-atlas button small { display: none; }
 
   .home-entry-actions {
@@ -3678,9 +3780,22 @@ html[data-world-cursor="active"] .to-top {
     padding: 28px 20px 36px;
   }
 
-  .game-progress,
-  .game-keys {
+  .game-progress {
     display: none;
+  }
+
+  .game-keys {
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .game-keys kbd,
+  .game-keys > span {
+    display: none;
+  }
+
+  .game-tour-toggle {
+    margin-left: 0;
   }
 
   .home-game__character {
@@ -3690,10 +3805,13 @@ html[data-world-cursor="active"] .to-top {
   }
 
   .game-card,
-  .game-constellation {
+  .game-constellation,
+  .game-thanks-card {
     width: auto;
     left: 16px;
     right: 16px;
+    z-index: 18;
+    max-height: min(58dvh, calc(100dvh - 200px));
   }
 
   .game-finish-banner {
@@ -3707,9 +3825,8 @@ html[data-world-cursor="active"] .to-top {
   }
 
   .game-card {
-    bottom: 78px;
-    z-index: 4;
-    padding: 14px 16px 13px;
+    bottom: calc(78px + env(safe-area-inset-bottom));
+    padding: 16px 16px 14px;
     transform: translate3d(0, 18px, 0);
   }
 
@@ -3724,37 +3841,66 @@ html[data-world-cursor="active"] .to-top {
 
   .game-card__title {
     margin-top: 4px;
-    font-size: 22px;
+    font-size: clamp(22px, 7vw, 28px);
   }
 
   .game-card__role,
   .game-card__copy,
-  .game-card p {
-    margin-top: 6px;
+  .game-card__body p,
+  .game-card__impact {
+    margin-top: 8px;
     font-size: 13px;
   }
 
-  .game-card__role {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .game-card__ask {
+    margin-top: 12px;
   }
 
-  .game-card__copy {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+  .game-card__ask button {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  .game-card__links {
+    margin-top: 12px;
+    gap: 12px 16px;
   }
 
   .game-card > a {
     margin-top: 10px;
   }
 
-  .game-constellation {
-    bottom: 168px;
-    z-index: 4;
-    padding: 12px 16px 12px;
+  .game-constellation,
+  .game-thanks-card {
+    bottom: calc(78px + env(safe-area-inset-bottom));
+    padding: 14px 16px 14px;
+  }
+
+  .home-game.is-thanks .game-pouch {
+    width: auto;
+    max-width: 100%;
+  }
+
+  .career-intro__card {
+    padding: 24px 20px 22px;
+  }
+
+  .career-intro__card h1 {
+    font-size: clamp(28px, 9vw, 48px);
+  }
+
+  .career-intro__buttons {
+    flex-direction: column;
+    margin-top: 22px;
+  }
+
+  .career-intro__card button {
+    width: 100%;
+  }
+
+  .home-game__touch {
+    bottom: max(16px, env(safe-area-inset-bottom));
   }
 
   .home-game.is-world-drop .game-card,
@@ -3787,17 +3933,24 @@ html[data-world-cursor="active"] .to-top {
 }
 
 @media (max-width: 900px) and (max-height: 640px) {
-  .game-card {
-    bottom: 70px;
-    padding: 10px 14px 10px;
+  .game-card,
+  .game-constellation,
+  .game-thanks-card {
+    bottom: calc(70px + env(safe-area-inset-bottom));
+    max-height: min(52dvh, calc(100dvh - 160px));
+    padding: 12px 14px 12px;
   }
 
-  .game-card__copy {
-    display: none;
+  .game-card__title {
+    font-size: 20px;
   }
 
-  .game-constellation {
-    bottom: 132px;
+  .game-card__role,
+  .game-card__copy,
+  .game-card__body p,
+  .game-card__impact {
+    margin-top: 6px;
+    font-size: 12px;
   }
 }
 
@@ -3857,6 +4010,22 @@ html[data-world-cursor="active"] .to-top {
 
   .home-action {
     flex: 1 1 auto;
+  }
+
+  .career-recruiter-cta {
+    max-width: calc(100% - 186px);
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .career-recruiter-cta a {
+    font-size: 10px;
+    padding-left: 8px;
+  }
+
+  .game-card__links a,
+  .game-card__links button {
+    font-size: 12px;
   }
 }
 
